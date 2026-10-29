@@ -15,12 +15,13 @@ from unittest import mock
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.test.utils import override_settings
 from django.utils import timezone
 
 from apps.accounts.models import Role, RoleGrant, User
 from apps.assets import services as asset_services
 from apps.assets.models import AssetCategory, AssetStatus, Condition
-from apps.core.models import Campus, Department, Holiday
+from apps.core.models import Campus, Department, Holiday, OutboundEmail
 from apps.requisitions import services
 from apps.requisitions.models import Kind, Priority, ReplacementReason, Requisition, RequisitionItem
 
@@ -115,11 +116,13 @@ class Command(BaseCommand):
         if User.objects.filter(email__endswith=f"@{DOMAIN}").exists():
             raise CommandError("Demo data is already loaded.")
         self.password = password
-        with transaction.atomic():
+        # Demo accounts have made-up addresses, so queue no real email.
+        with override_settings(ACQ_EMAIL_DELIVERY="cron"), transaction.atomic():
             self._reference_data()
             self._people()
             self._stock()
             self._requests()
+            OutboundEmail.objects.filter(to__endswith=f"@{DOMAIN}").delete()
         self.stdout.write(self.style.SUCCESS("Demo data loaded. Accounts (all with the same password):"))
         for user in User.objects.filter(email__endswith=f"@{DOMAIN}").order_by("email"):
             roles = ", ".join(user.role_labels()) or "Requester"

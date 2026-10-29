@@ -33,12 +33,15 @@
   </dl>
 
   <h2>2. Items</h2>
+  <div class="table-wrap">
   <table class="table table-compact">
     <thead><tr><th scope="col">Item</th><th scope="col" class="num">Qty</th><th scope="col">Recommended specification</th></tr></thead>
     <tbody>{% for i in items %}<tr><td>{{ i.description }}<span class="cell-sub">{{ i.category }}</span></td><td class="num">{{ i.quantity }}</td><td class="prose-box">{{ i.recommended_specification|default:"" }}</td></tr>{% endfor %}</tbody>
   </table>
+  </div>
 
   <h2>3. Routing slip and signatures</h2>
+  <div class="table-wrap">
   <table class="table table-compact">
     <thead><tr><th scope="col">#</th><th scope="col">Date</th><th scope="col">Action</th><th scope="col">By</th><th scope="col">Comment</th><th scope="col">Seal</th></tr></thead>
     <tbody>
@@ -54,6 +57,7 @@
     {% endfor %}
     </tbody>
   </table>
+  </div>
   <p class="small mt-16">{% if chain_problems %}<span class="stamp" data-tone="danger">{% icon 'triangle-alert' %}Audit chain check failed</span> {% for p in chain_problems %}{{ p }} {% endfor %}{% else %}<span class="stamp" data-tone="ok">{% icon 'shield-check' %}Audit chain intact</span> Each seal is the first 12 characters of a SHA-256 hash that covers the entry and the one before it. Run <span class="mono">manage.py verify_audit_chain {{ req.reference }}</span> to check the full hashes.{% endif %}</p>
 
   {% for v in vouchers %}

@@ -108,6 +108,30 @@ class AssetViewTests(TestCase):
         self.assertEqual(self.client.get(asset.get_absolute_url()).status_code, 404)
 
 
+class VoucherRetentionTests(TestCase):
+    def test_vouchers_stay_listed_for_a_year_after_their_request_is_archived(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from apps.assets.models import IssueVoucher
+        from apps.requisitions.models import Kind, Requisition
+
+        w = World()
+        monitor = w.stock(category=w.monitor_cat, serial="M-1")
+        req = w.draft(kind=Kind.ALLOCATION, items=[(w.monitor_cat, "Monitor", 1)])
+        w.act(req, w.requester, "submit")
+        w.act(req, w.tech, "issue_from_stock", asset_ids=[monitor.pk], campus=w.campus, building="A")
+        w.act(req, w.requester, "acknowledge")
+        voucher = IssueVoucher.objects.get()
+        Requisition.objects.filter(pk=req.pk).update(archived_at=timezone.now())
+        self.client.force_login(w.tech)
+        self.assertContains(self.client.get(reverse("assets:vouchers")), voucher.number)
+        IssueVoucher.objects.filter(pk=voucher.pk).update(created_at=timezone.now() - timedelta(days=400))
+        self.assertNotContains(self.client.get(reverse("assets:vouchers")), voucher.number)
+        self.assertContains(self.client.get(reverse("assets:vouchers"), {"archived": "1"}), voucher.number)
+
+
 class ImportTests(TestCase):
     def setUp(self):
         self.w = World()

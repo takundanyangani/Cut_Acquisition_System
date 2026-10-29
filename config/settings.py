@@ -369,3 +369,6 @@ ACQ_RETENTION_DAYS = {
     "RPL": env_int("ACQ_RETENTION_RPL_DAYS", 365),  # CUT ICT 42: 1 year
     "ALC": env_int("ACQ_RETENTION_ALC_DAYS", 365),  # CUT ICT 40: 1 year
 }
+# Issue vouchers (CUT ICT 40, 8.1: 1 year) stay in the voucher list for this
+# long, even when their request has already moved to the archive.
+ACQ_RETENTION_VOUCHER_DAYS = env_int("ACQ_RETENTION_VOUCHER_DAYS", 365)

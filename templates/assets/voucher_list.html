@@ -9,8 +9,9 @@
   </div>
 </div>
 <nav class="tabs" aria-label="Voucher status">
-  <a href="{% url 'assets:vouchers' %}"{% if not status %} aria-current="page"{% endif %}>All</a>
+  <a href="{% url 'assets:vouchers' %}"{% if not status and not show_archive %} aria-current="page"{% endif %}>All</a>
   {% for value, label in statuses %}<a href="?status={{ value }}"{% if status == value %} aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
+  {% if user.is_ict_staff %}<a href="?archived=1"{% if show_archive %} aria-current="page"{% endif %}>Archived</a>{% endif %}
 </nav>
 <div class="panel panel-flush">
   {% if page.object_list %}

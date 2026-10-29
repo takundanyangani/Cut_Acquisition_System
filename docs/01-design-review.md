@@ -77,7 +77,7 @@ Requester (every active user), Personal Advisor, ICT Director, Client Services M
 
 ### 3.4 Technology
 
-- Django 5.2 LTS (supported to April 2028) on Python 3.12 or later.
+- Django 5.2 LTS (supported to April 2028) on Python 3.11 or later, tested on 3.13.
 - PostgreSQL in production. SQLite for a developer laptop.
 - Server-rendered pages with hand-written CSS and a small amount of plain JavaScript. No Node build step, so the ICT team maintains it with Python skills alone.
 - Fonts and icons served from the application. Pages work on the campus network without reaching the internet.

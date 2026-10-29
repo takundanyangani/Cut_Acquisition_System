@@ -1474,8 +1474,9 @@ a.ref:hover {
 }
 .route-step {
   position: relative;
-  padding: 0 6px;
+  padding: 0 4px;
   text-align: center;
+  hyphens: auto;
   font-size: 0.8rem;
   color: var(--ink-3);
   line-height: 1.3;
@@ -1785,7 +1786,7 @@ a.ref:hover {
 
 .kv {
   display: grid;
-  grid-template-columns: 180px minmax(0, 1fr);
+  grid-template-columns: minmax(110px, 30%) minmax(0, 1fr);
   gap: 10px 20px;
   margin: 0;
 }
@@ -2325,6 +2326,7 @@ details.table-view > summary {
 }
 .print-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
@@ -2442,7 +2444,10 @@ details.table-view > summary {
 
 @media (max-width: 1180px) {
   .grid-main-side {
-    grid-template-columns: minmax(0, 1fr) 320px;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .grid-main-side > .side-first {
+    order: -1;
   }
   .route-step {
     font-size: 0.74rem;
@@ -2621,6 +2626,9 @@ details.table-view > summary {
   .print-sheet {
     padding: 20px 16px;
   }
+  .stamp-lg {
+    white-space: normal;
+  }
   .sign-line {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -2647,6 +2655,9 @@ details.table-view > summary {
 @media print {
   :root {
     --paper: #ffffff;
+  }
+  .table-wrap {
+    overflow: visible;
   }
   body {
     background: #ffffff;

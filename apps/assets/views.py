@@ -1,11 +1,15 @@
+from datetime import timedelta
+
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 
 from apps.accounts.models import Role
 
@@ -52,9 +56,7 @@ def asset_list(request):
     _require_ict(request.user)
     form, queryset = _filtered_assets(request)
     page = Paginator(queryset.order_by("asset_tag"), 30).get_page(request.GET.get("page"))
-    counts = {s: 0 for s in AssetStatus}
-    for status in Asset.objects.values_list("status", flat=True):
-        counts[status] = counts.get(status, 0) + 1
+    counts = dict(Asset.objects.values_list("status").annotate(n=Count("pk")).order_by())
     return render(
         request,
         "assets/list.html",
@@ -158,6 +160,11 @@ def voucher_list(request):
     queryset = IssueVoucher.objects.select_related("issued_to", "issued_by", "requisition")
     if not user.is_ict_staff:
         queryset = queryset.filter(issued_to=user)
+    archived = Q(requisition__archived_at__isnull=False) & Q(
+        created_at__lt=timezone.now() - timedelta(days=settings.ACQ_RETENTION_VOUCHER_DAYS)
+    )
+    show_archive = request.GET.get("archived") == "1" and user.is_ict_staff
+    queryset = queryset.filter(archived) if show_archive else queryset.exclude(archived)
     status = request.GET.get("status")
     if status in IssueVoucher.Status.values:
         queryset = queryset.filter(status=status)
@@ -165,7 +172,7 @@ def voucher_list(request):
     return render(
         request,
         "assets/voucher_list.html",
-        {"page": page, "status": status, "statuses": IssueVoucher.Status.choices},
+        {"page": page, "status": status, "statuses": IssueVoucher.Status.choices, "show_archive": show_archive},
     )
 
 

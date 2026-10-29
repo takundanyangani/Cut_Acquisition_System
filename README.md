@@ -28,7 +28,7 @@ Staff submit once. The request moves from desk to desk, each officer signs with 
 
 ## Quick start on a laptop
 
-Needs Python 3.11 or later.
+Needs Python 3.11 or later. On Windows, see [Windows](#windows) below.
 
 ```bash
 python3 -m venv .venv && . .venv/bin/activate && pip install -r requirements-dev.txt
@@ -49,6 +49,36 @@ Run the tests:
 ```bash
 python manage.py test
 ```
+
+### Windows
+
+Windows PowerShell does not accept `&&`, and the virtual environment lives in `.venv\Scripts`. Run each line on its own in the project folder:
+
+```bash
+py -m venv .venv
+```
+
+```bash
+.venv\Scripts\python -m pip install -r requirements-dev.txt
+```
+
+```bash
+Set-Content -Path .env -Value "DJANGO_DEBUG=true"
+```
+
+```bash
+.venv\Scripts\python manage.py migrate
+```
+
+```bash
+.venv\Scripts\python manage.py seed_demo
+```
+
+```bash
+.venv\Scripts\python manage.py runserver
+```
+
+If `py` is not found, use `python` instead. Calling `.venv\Scripts\python` directly avoids activating the environment, which PowerShell's script policy often blocks.
 
 ## Documentation
 

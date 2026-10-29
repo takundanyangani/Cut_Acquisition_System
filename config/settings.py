@@ -19,7 +19,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 def _load_dotenv(path):
     if not path.is_file():
         return
-    for raw in path.read_text(encoding="utf-8").splitlines():
+    data = path.read_bytes()
+    # Windows PowerShell 5.1 writes `echo x > .env` as UTF-16; Notepad may add a BOM.
+    text = data.decode("utf-16") if data.startswith((b"\xff\xfe", b"\xfe\xff")) else data.decode("utf-8-sig")
+    for raw in text.splitlines():
         line = raw.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue

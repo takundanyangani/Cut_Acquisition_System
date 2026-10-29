@@ -66,6 +66,11 @@ class Transition:
     independent: bool = False  # the assigned technician may not perform it
     help: str = ""
 
+    def __post_init__(self):
+        # Store the sets frozen so transitions are immutable and hashable.
+        object.__setattr__(self, "kinds", frozenset(self.kinds))
+        object.__setattr__(self, "sources", frozenset(self.sources))
+
     @property
     def comment_required(self):
         return self.comment == "required"

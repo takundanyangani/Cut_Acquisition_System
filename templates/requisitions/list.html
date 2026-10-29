@@ -64,10 +64,10 @@
   </div>
   {% else %}
   <div class="empty">
-    {% if tab == 'queue' %}{% icon 'inbox' %}<h3>Nothing is waiting for you</h3><p>Requests that need your decision or signature appear here.</p>
-    {% elif tab == 'mine' %}{% icon 'folder-open' %}<h3>No requests yet</h3><p>Start a request for a laptop, monitor, projector or any other ICT equipment.</p><a class="btn btn-primary" href="{% url 'requisitions:choose_kind' %}">Start a request</a>
-    {% elif tab == 'search' %}{% icon 'search' %}<h3>No matches</h3><p>Try a full reference such as EQR-2026-0042, an asset tag, or a word from the title.</p>
-    {% else %}{% icon 'files' %}<h3>No requests match</h3><p>Change the filters or clear them to see more.</p>{% endif %}
+    {% if tab == 'queue' %}{% icon 'inbox' %}<h2>Nothing is waiting for you</h2><p>Requests that need your decision or signature appear here.</p>
+    {% elif tab == 'mine' %}{% icon 'folder-open' %}<h2>No requests yet</h2><p>Start a request for a laptop, monitor, projector or any other ICT equipment.</p><a class="btn btn-primary" href="{% url 'requisitions:choose_kind' %}">Start a request</a>
+    {% elif tab == 'search' %}{% icon 'search' %}<h2>No matches</h2><p>Try a full reference such as EQR-2026-0042, an asset tag, or a word from the title.</p>
+    {% else %}{% icon 'files' %}<h2>No requests match</h2><p>Change the filters or clear them to see more.</p>{% endif %}
   </div>
   {% endif %}
 </div>

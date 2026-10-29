@@ -309,6 +309,25 @@ class AllocationRouteTests(TestCase):
         w.act(req, w.tech, "raise_voucher", asset_ids=[monitor.pk], campus=w.campus, building="A")
         self.assertEqual(req.vouchers.count(), 2)
 
+    def test_short_voucher_needs_an_explanation(self):
+        w = self.w
+        monitor = w.stock(category=w.monitor_cat, serial="M-7")
+        req = w.draft(kind=Kind.ALLOCATION, items=[(w.monitor_cat, "Monitor", 2)])
+        w.act(req, w.requester, "submit")
+        with self.assertRaisesMessage(WorkflowError, "lists 2 items"):
+            w.act(req, w.tech, "issue_from_stock", asset_ids=[monitor.pk], campus=w.campus, building="A")
+        w.act(
+            req,
+            w.tech,
+            "issue_from_stock",
+            asset_ids=[monitor.pk],
+            campus=w.campus,
+            building="A",
+            comment="Second monitor follows next week",
+        )
+        req.refresh_from_db()
+        self.assertEqual(req.state, State.AWAITING_ACK)
+
     def test_withdraw_voucher(self):
         w = self.w
         monitor = w.stock(category=w.monitor_cat, serial="M-1")

@@ -6,5 +6,5 @@
 {% block body %}
 <h1>The server could not read that request</h1>
 <p class="lede">Go back and try again. If you followed a link, it may be broken.</p>
-<div class="btn-row"><a class="btn btn-primary" href="/">Go to the start page</a></div>
+<div class="btn-row"><a class="btn btn-primary" href="{% url 'core:dashboard' %}">Go to the start page</a></div>
 {% endblock %}

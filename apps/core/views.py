@@ -100,22 +100,41 @@ def mark_all_read(request):
     return redirect("core:notifications")
 
 
+def _is_waiting_step(transition):
+    """Repeatable steps that leave the request where it is, such as follow-ups."""
+    return transition.code in {"follow_up", "procurement_update"}
+
+
 @login_required
 def process_guide(request):
     from apps.requisitions.models import KIND_PROCEDURE
 
+    state_order = list(State)
     routes = []
     for kind in (Kind.ALLOCATION, Kind.EQUIPMENT, Kind.REPLACEMENT):
-        steps = [t for t in workflow.TRANSITIONS if kind in t.kinds and t.primary and t.sop and t.code != "submit"]
-        submit = next(t for t in workflow.TRANSITIONS if t.code == "submit" and kind in t.kinds)
-        routes.append(
-            {
-                "kind": kind,
-                "procedure": KIND_PROCEDURE[kind],
-                "milestones": [label for _, label, _ in workflow.ROUTES[kind]],
-                "steps": [submit] + steps,
-            }
-        )
+        stages = []
+        for _, label, states in workflow.ROUTES[kind]:
+            steps, seen = [], set()
+            for state in sorted(states, key=state_order.index):
+                group = [
+                    t
+                    for t in workflow.TRANSITIONS
+                    if kind in t.kinds and t.primary and t.sop and state in t.sources and t not in seen
+                ]
+                # The step that moves the request on comes first; optional ones last.
+                group.sort(key=lambda t: (_is_waiting_step(t), t.tone != "primary"))
+                for index, t in enumerate(group):
+                    seen.add(t)
+                    if _is_waiting_step(t):
+                        prefix = "While waiting"
+                    elif index == 0:
+                        prefix = "Then" if steps else ""
+                    else:
+                        prefix = "Or"
+                    steps.append({"prefix": prefix, "t": t})
+            if steps:
+                stages.append({"label": label, "steps": steps})
+        routes.append({"kind": kind, "procedure": KIND_PROCEDURE[kind], "stages": stages})
     return render(
         request,
         "core/process.html",

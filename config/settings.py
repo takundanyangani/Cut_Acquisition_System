@@ -182,8 +182,8 @@ LOGOUT_REDIRECT_URL = "accounts:login"
 PASSWORD_RESET_TIMEOUT = 60 * 60 * 2  # reset links work for two hours
 
 # Optional sign-in against the CUT staff directory (Active Directory or
-# OpenLDAP). Requires `pip install django-auth-ldap` and the system LDAP
-# libraries. See docs/07-integration.md.
+# OpenLDAP). Requires `pip install -r requirements-ldap.txt` and the system
+# LDAP libraries. See docs/07-integration.md.
 LDAP_SERVER_URI = env("LDAP_SERVER_URI")
 if LDAP_SERVER_URI:
     import ldap  # noqa: E402
@@ -201,7 +201,7 @@ if LDAP_SERVER_URI:
     AUTH_LDAP_ALWAYS_UPDATE_USER = True
     AUTH_LDAP_START_TLS = env_bool("LDAP_START_TLS", False)
     AUTHENTICATION_BACKENDS = [
-        "django_auth_ldap.backend.LDAPBackend",
+        "apps.accounts.ldap_backend.DirectoryBackend",
         "apps.accounts.backends.EmailOrStaffNumberBackend",
     ]
 

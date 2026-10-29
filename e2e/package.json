@@ -1,0 +1,12 @@
+{
+  "name": "cut-acquisitions-e2e",
+  "private": true,
+  "description": "Browser test of the full approval route",
+  "scripts": {
+    "test": "node full-route.js"
+  },
+  "devDependencies": {
+    "axe-core": "4.10.2",
+    "playwright": "1.63.0"
+  }
+}

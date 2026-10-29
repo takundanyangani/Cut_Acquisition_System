@@ -122,6 +122,7 @@
     </section>
     <section class="panel">
       <div class="sec-head"><span class="sec-num">2</span><h2>Where it is going</h2></div>
+      <p class="small muted">Requested: {% for i in items %}{{ i.quantity }} x {{ i.description }}{% if not forloop.last %}, {% endif %}{% endfor %}. If you issue fewer items, explain why in the comment.</p>
       <div class="field-row cols-3">{% field form.campus %}{% field form.building %}{% field form.office %}</div>
       {% field form.notes %}
       {% if form.replaced_collected %}

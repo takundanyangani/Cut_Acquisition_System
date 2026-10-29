@@ -9,6 +9,6 @@
 <h1>The form had expired, so nothing was saved</h1>
 <p class="lede">This happens when a page stays open for a long time, after you sign out in another tab, or when cookies are blocked. Go back, reload the page, and submit again.</p>
 <div class="btn-row">
-  <a class="btn btn-primary" href="/">Go to the start page</a>
+  <a class="btn btn-primary" href="{% url 'core:dashboard' %}">Go to the start page</a>
 </div>
 {% endblock %}

@@ -404,6 +404,12 @@ def handle_voucher(req, user, data, t, request):
         assets = asset_services.lock_available(asset_ids)
     except asset_services.AssetError as exc:
         raise WorkflowError(str(exc)) from exc
+    requested = req.total_quantity
+    if len(assets) < requested and not (data.get("comment") or "").strip():
+        raise WorkflowError(
+            f"The request lists {requested} items and this voucher has {len(assets)}. "
+            "Add a comment that explains the difference, for example an item issued separately."
+        )
     replaced = None
     if req.kind == Kind.REPLACEMENT and req.asset_to_replace_id:
         replaced = req.asset_to_replace

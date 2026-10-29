@@ -24,3 +24,6 @@ htmlcov/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Browser tests
+e2e/node_modules/

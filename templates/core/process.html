@@ -13,15 +13,20 @@
   <section class="panel" aria-labelledby="route-{{ forloop.counter }}">
     <div class="sec-head"><span class="sec-num">{{ forloop.counter }}</span><h2 id="route-{{ forloop.counter }}">{{ route.kind.label }}</h2><span class="sec-aside"><span class="sop">{{ route.procedure.0 }}</span> {{ route.procedure.1 }}</span></div>
     <ol class="list-plain">
-      {% for t in route.steps %}
+      {% for stage in route.stages %}
       <li class="process-step">
         <span class="n" aria-hidden="true">{{ forloop.counter }}</span>
         <div>
-          <strong>{{ t.label }}</strong>
-          <div class="small muted">{% if t.actor == 'requester' %}Requester{% elif t.actor == 'assigned_technician' %}Help Desk Technician{% else %}{{ t.actor.label }}{% endif %}{% if t.sign %} · signs with password{% endif %}</div>
-          {% if t.help %}<p class="small mt-16 mb-0">{{ t.help }}</p>{% endif %}
+          <strong>{{ stage.label }}</strong>
+          {% for step in stage.steps %}{% with t=step.t %}
+          <div class="process-action{% if step.prefix == 'Or' or step.prefix == 'While waiting' %} is-alternative{% endif %}">
+            <span>{% if step.prefix %}<span class="muted">{{ step.prefix }}: </span>{% endif %}{{ t.label }}</span>
+            <span class="small muted">{% if t.actor == 'requester' %}Requester{% elif t.actor == 'assigned_technician' %}Help Desk Technician{% else %}{{ t.actor.label }}{% endif %}{% if t.sign %} · signs with password{% endif %}</span>
+            {% if t.help %}<span class="small">{{ t.help }}</span>{% endif %}
+            <span class="sop">{{ t.sop }}</span>
+          </div>
+          {% endwith %}{% endfor %}
         </div>
-        <span class="sop">{{ t.sop }}</span>
       </li>
       {% endfor %}
     </ol>

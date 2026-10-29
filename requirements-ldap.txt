@@ -1,0 +1,6 @@
+# Optional: sign-in against the university directory.
+# Needs the OpenLDAP and SASL development headers to build python-ldap,
+# for example on Ubuntu: apt install libldap-dev libsasl2-dev
+-r requirements.txt
+python-ldap~=3.4
+django-auth-ldap~=5.2

@@ -1,0 +1,30 @@
+<div class="docket">
+  <div class="docket-cell"><span class="docket-label">Procedure No</span><span class="docket-value">CUT ICT 40</span></div>
+  <div class="docket-cell"><span class="docket-label">Title</span><span class="docket-value">ICT Asset Allocation: Issue Voucher</span></div>
+  <div class="docket-cell"><span class="docket-label">Voucher No</span><span class="docket-value mono">{{ voucher.number }}</span></div>
+  <div class="docket-cell"><span class="docket-label">Issued to</span><span class="docket-value">{{ voucher.issued_to.display_name }}</span></div>
+  <div class="docket-cell"><span class="docket-label">Location</span><span class="docket-value">{{ voucher.location_text }}</span></div>
+  <div class="docket-cell"><span class="docket-label">Request</span><span class="docket-value mono">{{ voucher.requisition.reference }}</span></div>
+</div>
+<h2>Machine details</h2>
+<div class="table-wrap">
+  <table class="table table-compact">
+    <thead><tr><th scope="col">Asset tag</th><th scope="col">Item</th><th scope="col">Serial number</th><th scope="col">Specification</th><th scope="col">Condition</th></tr></thead>
+    <tbody>
+    {% for line in lines %}
+      <tr><td class="mono">{{ line.asset_tag }}</td><td>{{ line.make_model }}<span class="cell-sub">{{ line.category_name }}</span></td><td class="mono">{{ line.serial_number|default:"None" }}</td><td class="prose-box">{{ line.specification }}</td><td>{{ line.get_condition_display }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if voucher.replaced_asset %}
+<h2>Machine replaced</h2>
+<p><span class="mono">{{ voucher.replaced_asset.asset_tag }}</span> {{ voucher.replaced_asset.make_model }}: {% if voucher.replaced_asset_collected %}collected by ICT{% if voucher.replaced_asset_condition %}, condition {{ voucher.get_replaced_asset_condition_display|lower }}{% endif %}{% else %}not collected{% endif %}{% if voucher.replaced_asset_note %}. {{ voucher.replaced_asset_note }}{% endif %}</p>
+{% endif %}
+{% if voucher.notes %}<h2>Notes</h2><p class="prose-box">{{ voucher.notes }}</p>{% endif %}
+<h2>Signatures</h2>
+<div class="sign-line">
+  <div><strong>Issued by</strong><br>{{ voucher.issued_by.display_name }}, Help Desk Technician<br>{{ voucher.created_at|date:"j M Y, H:i" }}</div>
+  <div><strong>Received by</strong><br>{% if voucher.status == 'acknowledged' %}{{ voucher.issued_to.display_name }}<br>Signed online {{ voucher.acknowledged_at|date:"j M Y, H:i" }}{% elif voucher.status == 'disputed' %}Disputed {{ voucher.disputed_at|date:"j M Y, H:i" }}: {{ voucher.dispute_reason }}{% elif voucher.status == 'withdrawn' %}Withdrawn by ICT {{ voucher.withdrawn_at|date:"j M Y, H:i" }}{% else %}Awaiting signature{% endif %}</div>
+</div>
+{% if voucher.acknowledgement_text %}<p class="slip-comment mt-16">{{ voucher.acknowledgement_text }}</p>{% endif %}

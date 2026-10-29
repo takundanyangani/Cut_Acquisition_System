@@ -1,0 +1,10 @@
+# Scheduled jobs for a server install. Adjust the paths, then: crontab -u cutacq deploy/crontab
+# The server clock should be in Africa/Harare, or set CRON_TZ where supported.
+CRON_TZ=Africa/Harare
+APP=/srv/cut-acquisitions
+PY=/srv/cut-acquisitions/.venv/bin/python
+
+*/5 * * * *  cd $APP && $PY manage.py deliver_emails   >> /var/log/cutacq/jobs.log 2>&1
+30 7 * * 1-5 cd $APP && $PY manage.py send_reminders   >> /var/log/cutacq/jobs.log 2>&1
+15 2 * * *   cd $APP && $PY manage.py apply_retention  >> /var/log/cutacq/jobs.log 2>&1
+45 2 * * 0   cd $APP && $PY manage.py verify_audit_chain >> /var/log/cutacq/jobs.log 2>&1

@@ -1,0 +1,112 @@
+{% load static ui %}<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{% block title %}{% endblock %} · ICT Acquisitions · {{ ORG_SHORT_NAME }}</title>
+  <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
+  <link rel="preload" href="{% static 'fonts/ibm-plex-sans-latin-400-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <script src="{% static 'js/theme.js' %}"></script>
+  <script src="{% static 'js/app.js' %}" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+<div class="shell">
+  <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+    <a class="brand" href="{% url 'core:dashboard' %}">
+      <span class="brand-mark" aria-hidden="true">{{ ORG_SHORT_NAME }}</span>
+      <span class="brand-text">
+        <span class="brand-title">ICT Acquisitions</span>
+        <span class="brand-sub">{{ ORG_NAME }}</span>
+      </span>
+    </a>
+    <nav class="nav">
+      <ul class="nav-list">
+        <li><a class="nav-link" href="{% url 'core:dashboard' %}" {% nav_current 'core:dashboard' %}>{% icon 'layout-dashboard' %}Dashboard</a></li>
+        <li><a class="nav-link" href="{% url 'requisitions:choose_kind' %}" {% nav_current 'requisitions:choose_kind' 'requisitions:create' %}>{% icon 'file-plus' %}New request</a></li>
+        <li><a class="nav-link" href="{% url 'requisitions:queue' %}" {% nav_current 'requisitions:queue' %}>{% icon 'inbox' %}Awaiting my action{% if queue_count %}<span class="nav-count" aria-label="{{ queue_count }} waiting">{{ queue_count }}</span>{% endif %}</a></li>
+        <li><a class="nav-link" href="{% url 'requisitions:mine' %}" {% nav_current 'requisitions:mine' %}>{% icon 'folder-open' %}My requests</a></li>
+        <li><a class="nav-link" href="{% url 'assets:vouchers' %}" {% nav_current 'assets:vouchers' 'assets:voucher_detail' %}>{% icon 'receipt' %}Issue vouchers</a></li>
+      </ul>
+      {% if nav.all_requests or nav.assets or nav.reports %}
+      <p class="nav-section">ICT office</p>
+      <ul class="nav-list">
+        {% if nav.all_requests %}<li><a class="nav-link" href="{% url 'requisitions:all' %}" {% nav_current 'requisitions:all' %}>{% icon 'files' %}All requests</a></li>{% endif %}
+        {% if nav.assets %}<li><a class="nav-link" href="{% url 'assets:list' %}" {% nav_current 'assets:list' 'assets:detail' 'assets:create' 'assets:edit' %}>{% icon 'package' %}Asset register</a></li>{% endif %}
+        {% if nav.reports %}<li><a class="nav-link" href="{% url 'core:reports' %}" {% nav_current 'core:reports' %}>{% icon 'chart-column' %}Reports</a></li>{% endif %}
+        {% if nav.archive %}<li><a class="nav-link" href="{% url 'requisitions:archive' %}" {% nav_current 'requisitions:archive' %}>{% icon 'archive' %}Archive</a></li>{% endif %}
+      </ul>
+      {% endif %}
+      <p class="nav-section">Help and settings</p>
+      <ul class="nav-list">
+        <li><a class="nav-link" href="{% url 'core:process' %}" {% nav_current 'core:process' %}>{% icon 'route' %}How approvals work</a></li>
+        {% if nav.delegations %}<li><a class="nav-link" href="{% url 'accounts:delegations' %}" {% nav_current 'accounts:delegations' 'accounts:delegation_create' %}>{% icon 'users-round' %}Delegations</a></li>{% endif %}
+        {% if nav.admin %}<li><a class="nav-link" href="{% url 'admin:index' %}">{% icon 'settings' %}Administration</a></li>{% endif %}
+      </ul>
+    </nav>
+    <div class="sidebar-foot">
+      <strong>{{ UNIT_NAME }}</strong><br>
+      Procedures CUT ICT 38, 40 and 42, Revision 1
+    </div>
+  </aside>
+  <div class="backdrop" data-nav-close></div>
+
+  <div class="main-col">
+    <header class="topbar">
+      <button class="icon-button menu-toggle" type="button" data-nav-toggle aria-controls="sidebar" aria-expanded="false" aria-label="Open navigation">{% icon 'menu' %}</button>
+      <form class="search" action="{% url 'requisitions:search' %}" method="get" role="search">
+        <label class="visually-hidden" for="global-search">Search by reference, title, asset tag or serial number</label>
+        {% icon 'search' 'icon-sm' %}
+        <input id="global-search" type="search" name="q" placeholder="Reference, title, asset tag or serial" value="{{ query|default:'' }}" autocomplete="off">
+      </form>
+      <div class="topbar-actions">
+        <button class="icon-button theme-toggle" type="button" data-theme-toggle aria-label="Switch theme" aria-pressed="false">
+          {% icon 'sun' 'icon-sun' %}{% icon 'moon' 'icon-moon' %}
+        </button>
+        <a class="icon-button" href="{% url 'core:notifications' %}" aria-label="Notifications{% if unread_notifications %}, {{ unread_notifications }} unread{% endif %}">
+          {% icon 'bell' %}{% if unread_notifications %}<span class="dot" aria-hidden="true">{{ unread_notifications|stringformat:'d' }}</span>{% endif %}
+        </a>
+        <details class="user-menu" data-menu>
+          <summary aria-label="Account menu for {{ user.display_name }}">
+            <span class="avatar" aria-hidden="true">{{ user.initials }}</span>
+            <span class="user-menu-text">
+              <span class="user-menu-name">{{ user.short_name }}</span>
+              <span class="user-menu-role">{% with labels=user.role_labels %}{% if labels %}{{ labels.0 }}{% if labels|length > 1 %} +{{ labels|length|add:'-1' }}{% endif %}{% else %}Staff member{% endif %}{% endwith %}</span>
+            </span>
+            {% icon 'chevron-down' 'icon-sm' %}
+          </summary>
+          <div class="menu">
+            <div class="menu-head"><strong>{{ user.display_name }}</strong>{{ user.email }}</div>
+            <a href="{% url 'accounts:profile' %}">{% icon 'user' %}Profile and my assets</a>
+            <a href="{% url 'accounts:password_change' %}">{% icon 'key-round' %}Change password</a>
+            <form method="post" action="{% url 'accounts:logout' %}">
+              {% csrf_token %}
+              <button type="submit">{% icon 'log-out' %}Sign out</button>
+            </form>
+          </div>
+        </details>
+      </div>
+    </header>
+
+    <main class="content" id="main" tabindex="-1">
+      {% if acting_roles %}
+      <div class="alert alert-info alert-tint mb-24" role="note">
+        {% icon 'users-round' %}
+        <div class="alert-body">You are acting {% for label, person in acting_roles %}as {{ label }} for {{ person.display_name }}{% if not forloop.last %}; {% endif %}{% endfor %}. Decisions you sign show both names.</div>
+      </div>
+      {% endif %}
+      {% include "includes/messages.html" %}
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+      <span>{{ ORG_NAME }} · {{ UNIT_NAME }}</span>
+      <span>Help: {{ HELPDESK_CONTACT }}</span>
+    </footer>
+  </div>
+</div>
+</body>
+</html>

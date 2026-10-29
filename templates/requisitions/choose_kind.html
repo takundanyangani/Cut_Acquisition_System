@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}New request{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>What kind of request?</h1>
+    <p>Pick the one that fits. If you choose allocation and ICT has nothing in stock, the Helpdesk turns it into an equipment request for you, so you never start again.</p>
+  </div>
+</div>
+<div class="choice-grid">
+  {% for o in options %}
+  <a class="choice" href="{% url 'requisitions:create' o.slug %}">
+    <span class="choice-icon" aria-hidden="true">{% icon o.icon 'icon-lg' %}</span>
+    <span class="sop">{{ o.procedure }}</span>
+    <h2>{{ o.kind.label }}</h2>
+    <p>{{ o.summary }}</p>
+    <p class="route-text"><strong>Route:</strong> {{ o.route }}</p>
+    <span class="go">{{ o.cta }} {% icon 'arrow-right' 'icon-sm' %}</span>
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}

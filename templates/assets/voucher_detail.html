@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Voucher {{ voucher.number }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="eyebrow"><a href="{% url 'assets:vouchers' %}">Issue vouchers</a> {% icon 'chevron-right' 'icon-sm' %} <span class="mono">{{ voucher.number }}</span></p>
+    <h1>Issue voucher {{ voucher.number }}</h1>
+    <p>{{ voucher.get_status_display }}.</p>
+  </div>
+  <div class="btn-row">
+    {% if voucher.status == 'awaiting' and voucher.issued_to_id == user.pk %}<a class="btn btn-primary" href="{% url 'requisitions:action' voucher.requisition.public_id 'acknowledge' %}">{% icon 'pen-line' 'icon-sm' %}Sign for receipt</a>{% endif %}
+    <a class="btn btn-secondary" href="{% url 'assets:voucher_print' voucher.number %}">{% icon 'printer' 'icon-sm' %}Print</a>
+    <a class="btn btn-quiet" href="{{ voucher.requisition.get_absolute_url }}">Open request</a>
+  </div>
+</div>
+<article class="panel print-sheet">
+  {% include "assets/_voucher_body.html" %}
+</article>
+{% endblock %}

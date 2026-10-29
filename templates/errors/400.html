@@ -1,0 +1,10 @@
+{% extends "errors/base.html" %}
+{% block title %}Bad request{% endblock %}
+{% block doc_title %}Request not understood{% endblock %}
+{% block code %}400{% endblock %}
+{% block big %}400{% endblock %}
+{% block body %}
+<h1>The server could not read that request</h1>
+<p class="lede">Go back and try again. If you followed a link, it may be broken.</p>
+<div class="btn-row"><a class="btn btn-primary" href="/">Go to the start page</a></div>
+{% endblock %}

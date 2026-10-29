@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}{% if requisition %}Edit {{ requisition.display_reference }}{% else %}New {{ kind.label|lower }}{% endif %}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="eyebrow"><a href="{% url 'requisitions:choose_kind' %}">New request</a> {% icon 'chevron-right' 'icon-sm' %} <span class="sop">{{ procedure.0 }}</span></p>
+    <h1>{% if requisition %}Edit {{ requisition.display_reference }}{% else %}{{ kind.label }}{% endif %}</h1>
+    <p>{% if requisition.state == 'returned' %}This request was returned to you. Make the changes asked for, then resubmit. It goes back to the reviewer who returned it.{% elif kind == 'ALC' %}The Helpdesk checks ICT stock first. Say where you will use the item so they can deliver it.{% elif kind == 'EQR' %}This goes to the ICT Director through the Personal Advisor, as set out in CUT ICT 38.{% else %}The Client Services Manager reviews your reasons, then the ICT Director decides, as set out in CUT ICT 42.{% endif %}</p>
+  </div>
+</div>
+
+<form class="form" method="post" enctype="multipart/form-data" novalidate>
+  {% csrf_token %}
+  {% if form.errors or formset.non_form_errors or formset.total_error_count %}
+  <div class="error-summary" role="alert" tabindex="-1">
+    <h2>Check the form</h2>
+    <ul>
+      {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+      {% for f in form %}{% for error in f.errors %}<li><a href="#{{ f.id_for_label }}">{{ f.label }}: {{ error }}</a></li>{% endfor %}{% endfor %}
+      {% for error in formset.non_form_errors %}<li>{{ error }}</li>{% endfor %}
+      {% if formset.total_error_count and not formset.non_form_errors %}<li><a href="#items">Check the items</a></li>{% endif %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <section class="panel stack-s">
+    <div class="sec-head"><span class="sec-num">1</span><h2>The request</h2></div>
+    {% field form.title %}
+    {% if kind == 'RPL' %}
+      {% field form.asset_to_replace %}
+      {% field form.replaced_item_description %}
+      {% field form.replacement_reason %}
+    {% endif %}
+    {% field form.justification %}
+    <div class="field-row">{% field form.priority %}{% field form.needed_by %}</div>
+  </section>
+
+  <section class="panel mt-24" id="items" data-formset="items">
+    <div class="sec-head"><span class="sec-num">2</span><h2>Items</h2><span class="sec-aside">Up to 30</span></div>
+    {{ formset.management_form }}
+    {% if formset.non_form_errors %}<ul class="errorlist mb-16">{% for e in formset.non_form_errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+    <div data-formset-list>
+      {% for item_form in formset.forms %}
+        {% include "requisitions/_item_row.html" with form=item_form number=forloop.counter first=forloop.first %}
+      {% endfor %}
+    </div>
+    <template data-formset-template>{% include "requisitions/_item_row.html" with form=formset.empty_form %}</template>
+    <button class="btn btn-secondary mt-16" type="button" data-formset-add hidden>{% icon 'plus' 'icon-sm' %}Add another item</button>
+  </section>
+
+  <section class="panel mt-24">
+    <div class="sec-head"><span class="sec-num">3</span><h2>Where will it be used?</h2></div>
+    <p class="small muted">CUT ICT 40 §5.1 asks you to define your location. It goes on the issue voucher.</p>
+    <div class="field-row cols-3">{% field form.campus %}{% field form.building %}{% field form.office %}</div>
+  </section>
+
+  <section class="panel mt-24">
+    <div class="sec-head"><span class="sec-num">4</span><h2>Supporting documents</h2></div>
+    {% if requisition and requisition.active_attachments %}
+    <ul class="list-plain list-rows mb-16">
+      {% for a in requisition.active_attachments %}<li class="file-row">{% icon 'paperclip' %}<span>{{ a.original_name }}<br><span class="file-meta">{{ a.get_kind_display }} · {{ a.size|filesize }}</span></span></li>{% endfor %}
+    </ul>
+    {% endif %}
+    {% field form.attachments %}
+    {% if kind == 'RPL' %}<p class="small muted">For a lost or stolen machine, attach the police report.</p>{% endif %}
+  </section>
+
+  {% if requisition.state == 'returned' %}
+  <section class="panel mt-24">
+    <div class="field mb-0">
+      <label for="id_comment">What did you change? (optional)</label>
+      <textarea id="id_comment" name="comment" rows="3"></textarea>
+      <p class="help">The reviewer sees this note with your resubmission.</p>
+    </div>
+  </section>
+  {% endif %}
+
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit" name="submit" value="1">{% icon 'send' 'icon-sm' %}{% if requisition.state == 'returned' %}Resubmit{% else %}Submit request{% endif %}</button>
+    {% if not requisition or requisition.state == 'draft' %}<button class="btn btn-secondary" type="submit" name="save" value="1">Save as draft</button>{% else %}<button class="btn btn-secondary" type="submit" name="save" value="1">Save changes</button>{% endif %}
+    <span class="spacer"></span>
+    <a class="btn btn-quiet" href="{% if requisition %}{{ requisition.get_absolute_url }}{% else %}{% url 'requisitions:choose_kind' %}{% endif %}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

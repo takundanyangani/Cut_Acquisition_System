@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="eyebrow">{% now "l j F Y" %}</p>
+    <h1>{{ greeting }}, {{ user.short_name }}</h1>
+    <p>{% if queue_total %}{{ queue_total }} request{{ queue_total|pluralize }} {{ queue_total|pluralize:"is,are" }} waiting for you.{% else %}Nothing is waiting for your action.{% endif %}</p>
+  </div>
+  <a class="btn btn-primary" href="{% url 'requisitions:choose_kind' %}">{% icon 'file-plus' 'icon-sm' %}New request</a>
+</div>
+
+{% if overview %}
+<section aria-label="ICT office overview" class="stats">
+  <a class="stat" href="{% url 'requisitions:all' %}"><span class="stat-label">Open requests</span><span class="stat-value">{{ overview.open }}</span><span class="stat-note">Submitted and not yet closed</span></a>
+  <a class="stat{% if overview.overdue %} stat-warn{% endif %}" href="{% url 'requisitions:all' %}?overdue=1"><span class="stat-label">Past their stage target</span><span class="stat-value">{{ overview.overdue }}</span><span class="stat-note">{% if overview.overdue %}{% icon 'triangle-alert' %}Needs chasing{% else %}{% icon 'circle-check' %}All within target{% endif %}</span></a>
+  <a class="stat" href="{% url 'requisitions:all' %}?state=with_procurement"><span class="stat-label">With Procurement</span><span class="stat-value">{{ overview.with_procurement }}</span><span class="stat-note">Ordered, awaiting delivery</span></a>
+  <a class="stat" href="{% url 'requisitions:all' %}?state=awaiting_ack"><span class="stat-label">Awaiting receipt signature</span><span class="stat-value">{{ overview.awaiting_signature }}</span><span class="stat-note">Vouchers not yet signed</span></a>
+  <div class="stat"><span class="stat-label">Completed, last 30 days</span><span class="stat-value">{{ overview.completed_30 }}</span><span class="stat-note">Signed for by the user</span></div>
+</section>
+{% endif %}
+
+<div class="grid grid-main-side">
+  <div class="stack">
+    <section class="panel" aria-labelledby="queue-heading">
+      <div class="sec-head"><span class="sec-num">1</span><h2 id="queue-heading">Awaiting your action</h2>{% if queue_total > queue|length %}<a class="sec-aside" href="{% url 'requisitions:queue' %}">See all {{ queue_total }}</a>{% endif %}</div>
+      {% if queue %}
+        {% for r in queue %}{% include "includes/req_card.html" with r=r show_requester=True %}{% endfor %}
+      {% else %}
+        <div class="empty">{% icon 'inbox' %}<h3>Your desk is clear</h3><p>When a request reaches you, it appears here and you get an email.</p></div>
+      {% endif %}
+    </section>
+
+    <section class="panel" aria-labelledby="mine-heading">
+      <div class="sec-head"><span class="sec-num">2</span><h2 id="mine-heading">Your requests in progress</h2><a class="sec-aside" href="{% url 'requisitions:mine' %}">All my requests</a></div>
+      {% if in_progress %}
+        {% for r in in_progress %}{% include "includes/req_card.html" with r=r %}{% endfor %}
+      {% else %}
+        <div class="empty">{% icon 'folder-open' %}<h3>No requests in progress</h3><p>Need a laptop, monitor or other ICT equipment? Start a request and follow it here.</p><a class="btn btn-secondary" href="{% url 'requisitions:choose_kind' %}">Start a request</a></div>
+      {% endif %}
+      {% if recent_closed %}
+      <h3 class="mt-24 mb-16">Recently closed</h3>
+      {% for r in recent_closed %}{% include "includes/req_card.html" with r=r %}{% endfor %}
+      {% endif %}
+    </section>
+  </div>
+
+  <aside class="stack">
+    {% if follow_ups %}
+    <section class="panel panel-tight" aria-labelledby="fu-heading">
+      <h3 id="fu-heading" class="mb-16">Procurement follow-ups</h3>
+      <ul class="list-plain list-rows">
+        {% for r in follow_ups %}
+        <li>
+          <a class="ref" href="{{ r.get_absolute_url }}">{{ r.reference }}</a> <span class="small">{{ r.title }}</span><br>
+          <span class="small {% if r.follow_up_due %}due-late{% else %}muted{% endif %}">{% if r.follow_up_due %}Follow-up due{% else %}Next follow-up{% endif %} {{ r.next_follow_up_on|date:"j M" }}{% if r.procurement_reference %} · Proc. ref {{ r.procurement_reference }}{% endif %}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+    <section class="panel panel-tight" aria-labelledby="assets-heading">
+      <h3 id="assets-heading" class="mb-16">Equipment you hold</h3>
+      {% if my_assets %}
+      <ul class="list-plain list-rows">
+        {% for a in my_assets %}<li><a class="ref" href="{{ a.get_absolute_url }}">{{ a.asset_tag }}</a> <span class="small">{{ a.make_model }}</span><br><span class="small muted">{{ a.category }} · serial <span class="mono">{{ a.serial_number|default:"none" }}</span></span></li>{% endfor %}
+      </ul>
+      <p class="mt-16 small"><a href="{% url 'accounts:profile' %}">See all your equipment</a></p>
+      {% else %}
+      <p class="small muted">No equipment is recorded against your name yet.</p>
+      {% endif %}
+    </section>
+    <section class="panel panel-tight panel-sunk">
+      <h3 class="mb-16">How it works</h3>
+      <p class="small">You submit once. Each officer named in the CUT ICT procedures signs online, in order. You get an email at every step and can see whose desk the request is on.</p>
+      <p class="small"><a href="{% url 'core:process' %}">Read the approval routes</a></p>
+    </section>
+  </aside>
+</div>
+{% endblock %}

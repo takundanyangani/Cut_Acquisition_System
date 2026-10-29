@@ -1,0 +1,22 @@
+# systemd unit for a server install. Copy to /etc/systemd/system/cutacq.service
+[Unit]
+Description=CUT ICT Acquisition System (Gunicorn)
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=cutacq
+Group=cutacq
+WorkingDirectory=/srv/cut-acquisitions
+EnvironmentFile=/srv/cut-acquisitions/.env
+Environment=GUNICORN_BIND=127.0.0.1:8000
+ExecStart=/srv/cut-acquisitions/.venv/bin/gunicorn config.wsgi:application --config deploy/gunicorn.conf.py
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/srv/cut-acquisitions/var
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Delegations{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Delegations</h1>
+    <p>Hand your approval role to an acting officer while you are away, so requests keep moving. Every decision they sign records both names.</p>
+  </div>
+  {% if can_create %}<a class="btn btn-primary" href="{% url 'accounts:delegation_create' %}">{% icon 'plus' 'icon-sm' %}New delegation</a>{% endif %}
+</div>
+<div class="panel panel-flush">
+  {% if delegations %}
+  <div class="table-wrap">
+    <table class="table table-stack">
+      <thead><tr><th scope="col">Role</th><th scope="col">Role holder</th><th scope="col">Acting officer</th><th scope="col">Period</th><th scope="col">Status</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+      <tbody>
+      {% for d in delegations %}
+        <tr>
+          <td data-label="Role"><span class="cell-title">{{ d.get_role_display }}</span><span class="cell-sub">{{ d.reason }}</span></td>
+          <td data-label="Holder">{{ d.delegator.display_name }}</td>
+          <td data-label="Acting">{{ d.delegate.display_name }}</td>
+          <td data-label="Period" class="nowrap">{{ d.starts_at|date:"j M Y, H:i" }}<span class="cell-sub">to {{ d.ends_at|date:"j M Y, H:i" }}</span></td>
+          <td data-label="Status">{% if d.status == 'active' %}<span class="stamp" data-tone="ok">Active</span>{% elif d.status == 'scheduled' %}<span class="stamp" data-tone="info">Scheduled</span>{% elif d.status == 'revoked' %}<span class="stamp">Ended early</span>{% else %}<span class="stamp">Ended</span>{% endif %}</td>
+          <td data-label="">
+            {% if d.status == 'active' or d.status == 'scheduled' %}{% if d.delegator_id == user.pk or user.is_system_admin %}
+            <form method="post" action="{% url 'accounts:delegation_revoke' d.pk %}">{% csrf_token %}<button class="btn btn-danger-outline btn-sm" type="submit">End now</button></form>
+            {% endif %}{% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty">{% icon 'users-round' %}<h3>No delegations yet</h3><p>Set one up before leave or travel so requests do not wait for your return.</p></div>
+  {% endif %}
+</div>
+{% endblock %}

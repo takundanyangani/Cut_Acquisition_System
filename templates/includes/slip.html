@@ -1,0 +1,17 @@
+{% load ui %}<ol class="slip">
+  {% for e in entries %}
+  <li class="slip-entry" data-tone="{{ e.action|action_tone }}">
+    <span class="slip-marker" aria-hidden="true">{% icon e.action|action_icon %}</span>
+    <div class="slip-title">{{ e.label }}</div>
+    <div class="slip-meta">
+      {{ e.actor_name }}{% if e.actor_role_label and e.actor_role != 'requester' %}, {{ e.actor_role_label }}{% endif %}{% if e.on_behalf_of_name %} <strong>for {{ e.on_behalf_of_name }}</strong>{% endif %}<span class="sep" aria-hidden="true">·</span><time datetime="{{ e.created_at|date:'c' }}">{{ e.created_at|date:"j M Y, H:i" }}</time>
+      {% if e.sop_clause %}<span class="sep" aria-hidden="true">·</span><span class="sop">{{ e.sop_clause }}</span>{% endif %}
+    </div>
+    {% with details=e|entry_details %}{% if details %}<div class="slip-meta">{% for label, value in details %}{{ label }}: <span class="mono">{{ value }}</span>{% if not forloop.last %}<span class="sep" aria-hidden="true">·</span>{% endif %}{% endfor %}</div>{% endif %}{% endwith %}
+    {% if e.comment %}<p class="slip-comment">{{ e.comment }}</p>{% endif %}
+    {% if e.signed %}<div class="seal" title="{{ e.data.statement|default:'' }} Audit hash {{ e.entry_hash }}">{% icon 'shield-check' %}Signed with password <span class="mono">{{ e.short_hash }}</span></div>{% endif %}
+  </li>
+  {% empty %}
+  <li class="muted small">Nothing yet. The slip starts when the request is submitted.</li>
+  {% endfor %}
+</ol>

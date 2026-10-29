@@ -1,0 +1,23 @@
+/* Brand the Django admin to match the application. */
+:root,
+html[data-theme="light"] {
+  --primary: #154a75;
+  --secondary: #0f2a42;
+  --accent: #d9a441;
+  --primary-fg: #ffffff;
+  --header-color: #e9eef3;
+  --header-branding-color: #ffffff;
+  --header-bg: #0f2a42;
+  --header-link-color: #ffffff;
+  --breadcrumbs-bg: #154a75;
+  --link-fg: #154a75;
+  --link-hover-color: #0f3a5d;
+  --link-selected-fg: #0f3a5d;
+  --button-bg: #154a75;
+  --button-hover-bg: #0f3a5d;
+  --default-button-bg: #0f2a42;
+  --default-button-hover-bg: #154a75;
+}
+#header {
+  border-top: 3px solid #d9a441;
+}

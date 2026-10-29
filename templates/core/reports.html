@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Reports</h1>
+    <p>Figures for the key performance indicators in CUT ICT 38, 40 and 42. Times are in working days, without weekends or public holidays.</p>
+  </div>
+  <div class="btn-row">
+    <a class="btn btn-secondary" href="{% url 'requisitions:export' %}">{% icon 'file-spreadsheet' 'icon-sm' %}Requests (Excel)</a>
+    <a class="btn btn-secondary" href="{% url 'assets:export' %}">{% icon 'file-spreadsheet' 'icon-sm' %}Asset register (Excel)</a>
+  </div>
+</div>
+
+<nav class="tabs" aria-label="Reporting period">
+  {% for d in period_choices %}<a href="?days={{ d }}"{% if d == data.days %} aria-current="page"{% endif %}>Last {{ d }} days</a>{% endfor %}
+</nav>
+
+<section class="stats" aria-label="Headline figures">
+  <div class="stat"><span class="stat-label">Submitted</span><span class="stat-value">{{ data.submitted }}</span><span class="stat-note">In the last {{ data.days }} days</span></div>
+  <div class="stat"><span class="stat-label">Completed</span><span class="stat-value">{{ data.completed }}</span><span class="stat-note">Signed for by the user</span></div>
+  <div class="stat"><span class="stat-label">Declined</span><span class="stat-value">{{ data.declined }}</span><span class="stat-note">By the ICT Director</span></div>
+  <div class="stat{% if data.overdue_total %} stat-warn{% endif %}"><span class="stat-label">Open now, past target</span><span class="stat-value">{{ data.overdue_total }}</span><span class="stat-note">{% if data.overdue_total %}{% icon 'triangle-alert' %}{% endif %}of {{ data.open_total }} open</span></div>
+  <div class="stat"><span class="stat-label">Median time to Procurement</span><span class="stat-value">{% if data.turnaround.to_procurement is not None %}{{ data.turnaround.to_procurement }}{% else %}None yet{% endif %}</span><span class="stat-note">Working days from submission, {{ data.turnaround.to_procurement_samples }} request{{ data.turnaround.to_procurement_samples|pluralize }}</span></div>
+</section>
+
+<div class="grid grid-2">
+  <section class="panel" aria-labelledby="open-heading">
+    <div class="sec-head"><span class="sec-num">1</span><h2 id="open-heading">Open requests by stage</h2><span class="sec-aside">Now</span></div>
+    <p class="small muted">Requests at each desk today. The right-hand column counts those past the stage target.</p>
+    <div class="chart hbars" role="img" aria-label="Bar chart of open requests by stage. Values are listed in the table view below.">
+      {% for r in data.open_rows %}
+      <div class="hbar" data-tip="{{ r.label }}" data-tip-value="{{ r.count }} open{% if r.overdue %}, {{ r.overdue }} past target{% endif %}" tabindex="0">
+        <span class="hbar-label">{{ r.label }}</span>
+        <svg class="hbar-track" width="100%" height="20" aria-hidden="true" focusable="false">
+          {% if r.count %}
+          <rect class="bar-a" x="0" y="1" width="{{ r.count|percent_of:max_open|stringformat:'.2f' }}%" height="18" rx="4"></rect>
+          <rect class="bar-a" x="0" y="1" width="4" height="18"></rect>
+          {% endif %}
+        </svg>
+        <span class="hbar-value">{{ r.count }}</span>
+        <span class="hbar-flag">{% if r.overdue %}{% icon 'triangle-alert' 'icon-sm' %}{{ r.overdue }} late{% endif %}</span>
+      </div>
+      {% endfor %}
+    </div>
+    <details class="table-view">
+      <summary>Table view</summary>
+      <div class="table-wrap">
+        <table class="table table-compact">
+          <thead><tr><th scope="col">Stage</th><th scope="col" class="num">Open</th><th scope="col" class="num">Past target</th><th scope="col" class="num">Target (days)</th></tr></thead>
+          <tbody>{% for r in data.open_rows %}<tr><td>{{ r.label }}</td><td class="num">{{ r.count }}</td><td class="num">{{ r.overdue }}</td><td class="num">{{ r.target|default:"Follow-ups" }}</td></tr>{% endfor %}</tbody>
+        </table>
+      </div>
+    </details>
+  </section>
+
+  <section class="panel" aria-labelledby="time-heading">
+    <div class="sec-head"><span class="sec-num">2</span><h2 id="time-heading">Time spent at each stage</h2><span class="sec-aside">CUT ICT 38 KPI 6.1</span></div>
+    <ul class="legend">
+      <li><span class="swatch swatch-a" aria-hidden="true"></span>Median working days</li>
+      <li><span class="swatch-line" aria-hidden="true"></span>Target</li>
+    </ul>
+    <div class="chart hbars" role="img" aria-label="Bar chart of median working days per stage against each stage target. Values are listed in the table view below.">
+      {% for r in data.durations %}
+      <div class="hbar" data-tip="{{ r.label }}" data-tip-value="{% if r.median is not None %}Median {{ r.median }} days{% else %}No data{% endif %}{% if r.target %}, target {{ r.target }}{% endif %}" tabindex="0">
+        <span class="hbar-label">{{ r.label }}</span>
+        <svg class="hbar-track" width="100%" height="20" aria-hidden="true" focusable="false">
+          {% if r.median %}
+          <rect class="bar-a" x="0" y="1" width="{{ r.median|percent_of:max_duration|stringformat:'.2f' }}%" height="18" rx="4"></rect>
+          <rect class="bar-a" x="0" y="1" width="4" height="18"></rect>
+          {% endif %}
+          {% if r.target %}
+          <line class="target" x1="{{ r.target|percent_of:max_duration|stringformat:'.2f' }}%" x2="{{ r.target|percent_of:max_duration|stringformat:'.2f' }}%" y1="0" y2="20"></line>
+          {% endif %}
+        </svg>
+        <span class="hbar-value">{% if r.median is not None %}{{ r.median|floatformat:1 }}{% else %}<span class="muted">None</span>{% endif %}</span>
+        <span class="hbar-flag">{% if r.median and r.target and r.median > r.target %}{% icon 'triangle-alert' 'icon-sm' %}Over{% endif %}</span>
+      </div>
+      {% endfor %}
+    </div>
+    <details class="table-view">
+      <summary>Table view</summary>
+      <div class="table-wrap">
+        <table class="table table-compact">
+          <thead><tr><th scope="col">Stage</th><th scope="col" class="num">Median</th><th scope="col" class="num">Longest</th><th scope="col" class="num">Target</th><th scope="col" class="num">Requests</th></tr></thead>
+          <tbody>{% for r in data.durations %}<tr><td>{{ r.label }}</td><td class="num">{{ r.median|default_if_none:"None" }}</td><td class="num">{{ r.longest|default_if_none:"None" }}</td><td class="num">{{ r.target|default:"None" }}</td><td class="num">{{ r.samples }}</td></tr>{% endfor %}</tbody>
+        </table>
+      </div>
+    </details>
+  </section>
+</div>
+
+<div class="grid grid-3 mt-24">
+  <section class="panel" aria-labelledby="completion-heading">
+    <div class="sec-head"><span class="sec-num">3</span><h2 id="completion-heading">Submission to signature</h2></div>
+    <p class="small muted">Median working days from submission until the user signed the issue voucher.</p>
+    <table class="table table-compact">
+      <thead><tr><th scope="col">Type</th><th scope="col" class="num">Median</th><th scope="col" class="num">Requests</th></tr></thead>
+      <tbody>{% for row in data.turnaround.completion %}<tr><td>{{ row.label }}</td><td class="num">{{ row.median|default_if_none:"None" }}</td><td class="num">{{ row.samples }}</td></tr>{% endfor %}</tbody>
+    </table>
+  </section>
+
+  <section class="panel" aria-labelledby="voucher-heading">
+    <div class="sec-head"><span class="sec-num">4</span><h2 id="voucher-heading">Issue vouchers</h2><span class="sec-aside">CUT ICT 40 KPI 7.1</span></div>
+    <dl class="kv">
+      <dt>Raised</dt><dd class="num">{{ data.vouchers.raised }}</dd>
+      <dt>Signed by recipient</dt><dd class="num">{{ data.vouchers.signed }}</dd>
+      <dt>Disputed</dt><dd class="num">{{ data.vouchers.disputed }}</dd>
+      <dt>Withdrawn by ICT</dt><dd class="num">{{ data.vouchers.withdrawn }}</dd>
+      <dt>Awaiting signature now</dt><dd class="num">{{ data.vouchers.awaiting }}</dd>
+      <dt>Median days to sign</dt><dd class="num">{{ data.vouchers.median_days_to_sign|default_if_none:"None yet" }}</dd>
+    </dl>
+  </section>
+
+  <section class="panel" aria-labelledby="movement-heading">
+    <div class="sec-head"><span class="sec-num">5</span><h2 id="movement-heading">Asset movements</h2><span class="sec-aside">CUT ICT 42 KPI 7.1</span></div>
+    <table class="table table-compact">
+      <thead><tr><th scope="col">Movement</th><th scope="col" class="num">Count</th></tr></thead>
+      <tbody>{% for row in data.movements.rows %}{% if row.count %}<tr><td>{{ row.label }}</td><td class="num">{{ row.count }}</td></tr>{% endif %}{% empty %}{% endfor %}</tbody>
+    </table>
+    <p class="small mt-16">{% if data.movements.without_actor %}<span class="stamp" data-tone="danger">{% icon 'triangle-alert' %}{{ data.movements.without_actor }} without a named ICT officer</span>{% else %}{% if data.movements.total %}<span class="stamp" data-tone="ok">{% icon 'circle-check' %}All {{ data.movements.total }} recorded by a named officer</span>{% else %}No movements in this period.{% endif %}{% endif %}</p>
+  </section>
+</div>
+{% endblock %}

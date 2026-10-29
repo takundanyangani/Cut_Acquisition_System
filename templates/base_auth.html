@@ -1,0 +1,42 @@
+{% load static ui %}<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{% block title %}Sign in{% endblock %} · ICT Acquisitions · {{ ORG_SHORT_NAME }}</title>
+  <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <script src="{% static 'js/theme.js' %}"></script>
+  <script src="{% static 'js/app.js' %}" defer></script>
+</head>
+<body>
+<div class="auth">
+  <main class="auth-main" id="main">
+    <div class="auth-card">
+      <div class="auth-brand">
+        <span class="brand-mark" aria-hidden="true">{{ ORG_SHORT_NAME }}</span>
+        <div><strong>ICT Acquisitions</strong><span>{{ ORG_NAME }}</span></div>
+      </div>
+      {% include "includes/messages.html" %}
+      {% block content %}{% endblock %}
+      <p class="auth-foot">{% block foot %}Problems signing in? Contact {{ HELPDESK_CONTACT }}.{% endblock %}</p>
+    </div>
+  </main>
+  <aside class="auth-aside" aria-label="About this system">
+    <h2>Every signature for your ICT request, in one place.</h2>
+    <p>Submit once. The request moves from desk to desk on its own, each officer signs online, and you can see where it is at any time.</p>
+    <div class="demo-slip" aria-hidden="true">
+      <div class="demo-slip-head"><span>Routing slip · CUT ICT 38</span><strong>EQR-2026-0042</strong></div>
+      <ol>
+        <li><div>Personal Advisor<span>Forwarded to the ICT Director</span></div><span class="demo-stamp ok">Forwarded</span></li>
+        <li><div>ICT Director<span>Commented and forwarded to the CSM</span></div><span class="demo-stamp ok">Signed</span></li>
+        <li><div>Help Desk Technician<span>Specifications attached</span></div><span class="demo-stamp info">Submitted</span></li>
+        <li><div>Operations Manager<span>Cross-check</span></div><span class="demo-stamp warn">Waiting</span></li>
+      </ol>
+    </div>
+  </aside>
+</div>
+</body>
+</html>

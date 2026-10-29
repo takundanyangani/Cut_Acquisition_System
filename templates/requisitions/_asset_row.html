@@ -1,0 +1,10 @@
+{% load ui %}<div class="item-row" data-formset-row>
+  <div class="item-row-head">
+    <span class="small"><span class="mono">Item <span data-row-number></span></span></span>
+    {% if not first %}<button class="btn btn-quiet btn-sm" type="button" data-formset-remove>Remove</button>{% endif %}
+  </div>
+  {% if form.non_field_errors %}<ul class="errorlist">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+  <div class="field-row cols-3">{% field form.category %}{% field form.make %}{% field form.model %}</div>
+  <div class="field-row cols-3">{% field form.serial_number %}{% field form.asset_tag %}{% field form.condition %}</div>
+  <div class="field-row">{% field form.specification %}{% field form.warranty_expires_on %}</div>
+</div>

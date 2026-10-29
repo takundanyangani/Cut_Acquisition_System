@@ -1,0 +1,56 @@
+# Local or single-server deployment: PostgreSQL, the web app and the job runner.
+# Copy .env.example to .env and fill it in first.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: cutacq
+      POSTGRES_USER: cutacq
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cutacq -d cutacq"]
+      interval: 10s
+      retries: 5
+    restart: unless-stopped
+
+  web:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://cutacq:${POSTGRES_PASSWORD}@db:5432/cutacq
+      GUNICORN_FORWARDED_ALLOW_IPS: "*"
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             gunicorn config.wsgi:application --config deploy/gunicorn.conf.py"
+    ports:
+      - "127.0.0.1:8000:8000"  # reach it through Nginx on the host
+    volumes:
+      - uploads:/app/var/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz')"]
+      interval: 30s
+      retries: 3
+    restart: unless-stopped
+
+  jobs:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://cutacq:${POSTGRES_PASSWORD}@db:5432/cutacq
+      ACQ_EMAIL_DELIVERY: cron
+    command: python deploy/scheduler.py
+    volumes:
+      - uploads:/app/var/uploads
+    depends_on:
+      web:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  uploads:

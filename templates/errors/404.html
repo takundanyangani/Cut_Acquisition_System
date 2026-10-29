@@ -1,0 +1,27 @@
+{% extends "errors/base.html" %}
+{% load ui %}
+{% block title %}Page not found{% endblock %}
+{% block doc_title %}Page not found{% endblock %}
+{% block code %}404{% endblock %}
+{% block big %}404{% endblock %}
+{% block stamp %}<span class="stamp stamp-lg" data-tone="danger">{% icon 'folder-open' %}Not on file</span>{% endblock %}
+{% block body %}
+<h1>We could not find that page or record</h1>
+<p class="lede">The link may be mistyped or out of date. If it points to a request or voucher, it may belong to someone else: you only see records you raised or handle.</p>
+{% if user.is_authenticated %}
+<form class="search" action="{% url 'requisitions:search' %}" method="get" role="search">
+  <label class="visually-hidden" for="nf-search">Search by reference, title, asset tag or serial number</label>
+  {% icon 'search' 'icon-sm' %}
+  <input id="nf-search" type="search" name="q" placeholder="Try a reference such as EQR-2026-0042">
+</form>
+<div class="btn-row">
+  <a class="btn btn-primary" href="{% url 'core:dashboard' %}">{% icon 'layout-dashboard' 'icon-sm' %}Go to the dashboard</a>
+  <a class="btn btn-secondary" href="{% url 'requisitions:mine' %}">My requests</a>
+</div>
+{% else %}
+<div class="btn-row mt-24">
+  <a class="btn btn-primary" href="{% url 'accounts:login' %}">{% icon 'arrow-right' 'icon-sm' %}Sign in</a>
+</div>
+{% endif %}
+<p class="small muted mt-24">Still stuck? Contact {{ HELPDESK_CONTACT }} and quote the address you tried.</p>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}How approvals work{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>How approvals work</h1>
+    <p>Each request type follows one CUT ICT procedure, step by step. The system routes the request to the next officer, asks signing officers for their password, and keeps a tamper-evident record of every decision.</p>
+  </div>
+</div>
+<div class="stack">
+{% for route in routes %}
+  <section class="panel" aria-labelledby="route-{{ forloop.counter }}">
+    <div class="sec-head"><span class="sec-num">{{ forloop.counter }}</span><h2 id="route-{{ forloop.counter }}">{{ route.kind.label }}</h2><span class="sec-aside"><span class="sop">{{ route.procedure.0 }}</span> {{ route.procedure.1 }}</span></div>
+    <ol class="list-plain">
+      {% for t in route.steps %}
+      <li class="process-step">
+        <span class="n" aria-hidden="true">{{ forloop.counter }}</span>
+        <div>
+          <strong>{{ t.label }}</strong>
+          <div class="small muted">{% if t.actor == 'requester' %}Requester{% elif t.actor == 'assigned_technician' %}Help Desk Technician{% else %}{{ t.actor.label }}{% endif %}{% if t.sign %} · signs with password{% endif %}</div>
+          {% if t.help %}<p class="small mt-16 mb-0">{{ t.help }}</p>{% endif %}
+        </div>
+        <span class="sop">{{ t.sop }}</span>
+      </li>
+      {% endfor %}
+    </ol>
+  </section>
+{% endfor %}
+  <section class="panel panel-sunk" aria-labelledby="rules-heading">
+    <div class="sec-head"><span class="sec-num">4</span><h2 id="rules-heading">Rules every route follows</h2></div>
+    <ul>
+      <li>Nobody can act on a request they raised, whatever roles they hold.</li>
+      <li>Any reviewer can return a request for changes, with a reason. It comes back to the same reviewer after you resubmit.</li>
+      <li>Only the ICT Director can decline a request.</li>
+      <li>An officer who will be away can delegate their role for a set period. The acting officer's signature shows both names.</li>
+      <li>Each stage has a target in working days, listed below. Weekends and public holidays do not count. A request past its target sends a daily reminder to whoever holds it.</li>
+      <li>Every hand-over of equipment uses an issue voucher (CUT ICT 40). You confirm the serial number, specification and condition before you sign.</li>
+    </ul>
+    <div class="table-wrap mt-16">
+      <table class="table table-compact">
+        <caption class="visually-hidden">Stage targets in working days</caption>
+        <thead><tr><th scope="col">Stage</th><th scope="col" class="num">Target (working days)</th></tr></thead>
+        <tbody>{% for label, days in target_rows %}<tr><td>{{ label }}</td><td class="num">{{ days }}</td></tr>{% endfor %}</tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,21 @@
+[project]
+name = "cut-ict-acquisitions"
+version = "1.0.0"
+description = "ICT equipment requests, approvals and asset allocation for Chinhoyi University of Technology (CUT ICT 38, 40, 42)"
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+extend-exclude = ["apps/*/migrations"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "DJ"]
+ignore = ["DJ001", "DJ012"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["apps", "config"]
+
+[tool.coverage.run]
+source = ["apps"]
+omit = ["*/migrations/*", "*/tests/*"]

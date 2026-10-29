@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Record {{ req.reference }}{% endblock %}
+{% block content %}
+<div class="print-toolbar">
+  <button class="btn btn-primary" type="button" data-print>{% icon 'printer' 'icon-sm' %}Print or save as PDF</button>
+  <a class="btn btn-quiet" href="{{ req.get_absolute_url }}">Back to the request</a>
+</div>
+<article class="print-sheet">
+  <div class="print-head">
+    <div><div class="org">{{ ORG_NAME }}</div><div class="small muted">{{ UNIT_NAME }} · Retained documented information</div></div>
+    {% state_stamp req large=True %}
+  </div>
+  <div class="docket">
+    <div class="docket-cell"><span class="docket-label">Procedure No</span><span class="docket-value">{{ req.procedure_number }}</span></div>
+    <div class="docket-cell"><span class="docket-label">Title</span><span class="docket-value">{{ req.procedure_title }}</span></div>
+    <div class="docket-cell"><span class="docket-label">Reference</span><span class="docket-value mono">{{ req.reference }}</span></div>
+    <div class="docket-cell"><span class="docket-label">Requested by</span><span class="docket-value">{{ req.requester.display_name }}</span></div>
+    <div class="docket-cell"><span class="docket-label">Location</span><span class="docket-value">{{ req.location_text }}</span></div>
+    <div class="docket-cell"><span class="docket-label">Printed</span><span class="docket-value">{% now "j M Y, H:i" %}</span></div>
+  </div>
+
+  <h2>1. Request</h2>
+  <dl class="kv">
+    <dt>Title</dt><dd>{{ req.title }}</dd>
+    <dt>Type</dt><dd>{{ req.get_kind_display }}</dd>
+    {% if req.kind == 'RPL' %}<dt>Machine to replace</dt><dd>{% if req.asset_to_replace %}{{ req.asset_to_replace.asset_tag }} {{ req.asset_to_replace.make_model }}{% else %}{{ req.replaced_item_description }}{% endif %} ({{ req.get_replacement_reason_display }})</dd>{% endif %}
+    <dt>Justification</dt><dd class="prose-box">{{ req.justification }}</dd>
+    <dt>Department</dt><dd>{{ req.department|default:"Not recorded" }}</dd>
+    <dt>Submitted</dt><dd>{{ req.submitted_at|date:"j M Y, H:i" }}</dd>
+    {% if req.procurement_reference %}<dt>Procurement ref</dt><dd>{{ req.procurement_reference }}</dd>{% endif %}
+    {% if req.closed_at %}<dt>Closed</dt><dd>{{ req.closed_at|date:"j M Y, H:i" }}</dd>{% endif %}
+  </dl>
+
+  <h2>2. Items</h2>
+  <table class="table table-compact">
+    <thead><tr><th scope="col">Item</th><th scope="col" class="num">Qty</th><th scope="col">Recommended specification</th></tr></thead>
+    <tbody>{% for i in items %}<tr><td>{{ i.description }}<span class="cell-sub">{{ i.category }}</span></td><td class="num">{{ i.quantity }}</td><td class="prose-box">{{ i.recommended_specification|default:"" }}</td></tr>{% endfor %}</tbody>
+  </table>
+
+  <h2>3. Routing slip and signatures</h2>
+  <table class="table table-compact">
+    <thead><tr><th scope="col">#</th><th scope="col">Date</th><th scope="col">Action</th><th scope="col">By</th><th scope="col">Comment</th><th scope="col">Seal</th></tr></thead>
+    <tbody>
+    {% for e in entries %}
+      <tr>
+        <td class="num">{{ e.seq }}</td>
+        <td class="nowrap">{{ e.created_at|date:"j M Y H:i" }}</td>
+        <td>{{ e.label }}{% if e.sop_clause %}<span class="cell-sub">{{ e.sop_clause }}</span>{% endif %}</td>
+        <td>{{ e.actor_name }}{% if e.actor_role_label %}<span class="cell-sub">{{ e.actor_role_label }}{% if e.on_behalf_of_name %} for {{ e.on_behalf_of_name }}{% endif %}</span>{% endif %}</td>
+        <td class="prose-box">{{ e.comment }}</td>
+        <td class="mono small">{% if e.signed %}Signed {% endif %}{{ e.entry_hash|slice:":12" }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p class="small mt-16">{% if chain_problems %}<span class="stamp" data-tone="danger">{% icon 'triangle-alert' %}Audit chain check failed</span> {% for p in chain_problems %}{{ p }} {% endfor %}{% else %}<span class="stamp" data-tone="ok">{% icon 'shield-check' %}Audit chain intact</span> Each seal is the first 12 characters of a SHA-256 hash that covers the entry and the one before it. Run <span class="mono">manage.py verify_audit_chain {{ req.reference }}</span> to check the full hashes.{% endif %}</p>
+
+  {% for v in vouchers %}
+  <h2>{{ forloop.counter|add:3 }}. Issue voucher {{ v.number }}</h2>
+  <p class="small">{{ v.get_status_display }}{% if v.acknowledged_at %} on {{ v.acknowledged_at|date:"j M Y, H:i" }}{% endif %}.</p>
+  {% if v.acknowledgement_text %}<p class="slip-comment">{{ v.acknowledgement_text }}</p>{% endif %}
+  {% endfor %}
+</article>
+{% endblock %}

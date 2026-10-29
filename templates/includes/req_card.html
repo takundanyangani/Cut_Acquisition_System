@@ -1,0 +1,10 @@
+{% load ui %}<a class="req-card" href="{{ r.get_absolute_url }}">
+  <span class="req-card-title"><span class="ref">{{ r.display_reference }}</span> {{ r.title }}</span>
+  <span>{% state_stamp r %}</span>
+  <span class="req-card-meta">
+    <span>{{ r.get_kind_display }}</span>
+    {% if show_requester %}<span>{% icon 'user' %}{{ r.requester.display_name }}</span>{% endif %}
+    {% due_text r as due_label %}{% if due_label %}<span class="{% if r.is_overdue %}due-late{% endif %}">{% icon 'clock' %}{{ due_label }}</span>{% endif %}
+    {% if r.state == 'with_procurement' and r.next_follow_up_on %}<span>{% icon 'calendar' %}Follow up {{ r.next_follow_up_on|date:'j M' }}</span>{% endif %}
+  </span>
+</a>

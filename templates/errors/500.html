@@ -1,0 +1,26 @@
+{% load static %}<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Something went wrong · ICT Acquisitions</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body>
+<main class="error-page" id="main">
+  <div class="error-card">
+    <div class="docket" role="group" aria-label="Page details">
+      <div class="docket-cell"><span class="docket-label">System</span><span class="docket-value">ICT Acquisitions</span></div>
+      <div class="docket-cell"><span class="docket-label">Title</span><span class="docket-value">Server error</span></div>
+      <div class="docket-cell"><span class="docket-label">Status code</span><span class="docket-value mono">500</span></div>
+    </div>
+    <div class="error-code"><span class="big" aria-hidden="true">500</span><span class="stamp stamp-lg" data-tone="danger">Fault logged</span></div>
+    <h1>Something went wrong on our side</h1>
+    <p class="lede">The error has been logged for the ICT systems team. If you were approving or signing, nothing was saved unless you saw a confirmation. Wait a minute, then try again.</p>
+    <p><a class="btn btn-primary" href="/">Go to the start page</a></p>
+    <p class="small muted">If it keeps happening, contact {{ helpdesk|default:"the ICT Helpdesk" }}.</p>
+  </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Print {{ voucher.number }}{% endblock %}
+{% block content %}
+<div class="print-toolbar">
+  <button class="btn btn-primary" type="button" data-print>{% icon 'printer' 'icon-sm' %}Print or save as PDF</button>
+  <a class="btn btn-quiet" href="{{ voucher.get_absolute_url }}">Back to the voucher</a>
+</div>
+<article class="print-sheet">
+  <div class="print-head">
+    <div><div class="org">{{ ORG_NAME }}</div><div class="small muted">{{ UNIT_NAME }} · Kept at the Helpdesk for 1 year, then archived (CUT ICT 40, 8.1)</div></div>
+  </div>
+  {% include "assets/_voucher_body.html" %}
+</article>
+{% endblock %}

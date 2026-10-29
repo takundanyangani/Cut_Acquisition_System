@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}{{ transition.label }} · {{ req.reference }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="eyebrow"><a href="{{ req.get_absolute_url }}"><span class="mono">{{ req.reference }}</span></a> {% icon 'chevron-right' 'icon-sm' %} {% if transition.sop %}<span class="sop">{{ transition.sop }}</span>{% endif %}</p>
+    <h1>{{ transition.label }}</h1>
+    {% if transition.help %}<p>{{ transition.help }}</p>{% endif %}
+  </div>
+</div>
+
+<div class="grid grid-main-side">
+  <form class="stack" method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    {{ form.version }}
+    {% if show_all %}<input type="hidden" name="show_all" value="1">{% endif %}
+
+    {% if form.errors or form.assets_formset.total_error_count %}
+    <div class="error-summary" role="alert" tabindex="-1">
+      <h2>{% if form.non_field_errors %}This could not be saved{% else %}Check the form{% endif %}</h2>
+      <ul>
+        {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+        {% for f in form %}{% for error in f.errors %}<li><a href="#{{ f.id_for_label }}">{{ f.label }}: {{ error }}</a></li>{% endfor %}{% endfor %}
+        {% if form.assets_formset.total_error_count %}<li><a href="#delivered">Check the delivered items</a></li>{% for e in form.assets_formset.non_form_errors %}<li>{{ e }}</li>{% endfor %}{% endif %}
+      </ul>
+    </div>
+    {% endif %}
+
+    {% if transition.form == 'assign' or transition.form == 'recommend' %}
+    <section class="panel">
+      {% field form.technician %}
+      {% if form.comment %}{% field form.comment %}{% endif %}
+    </section>
+
+    {% elif transition.form == 'specifications' %}
+    <section class="panel">
+      <div class="sec-head"><span class="sec-num">1</span><h2>Recommended specifications</h2></div>
+      {% for item, spec_field, cost_field in form.item_fields %}
+      <div class="item-row">
+        <div class="item-row-head"><strong>{{ item.quantity }} x {{ item.description }}</strong><span class="small muted">{{ item.category }}</span></div>
+        {% if item.requester_notes %}<p class="small muted">Requester's note: {{ item.requester_notes }}</p>{% endif %}
+        {% field spec_field label="Recommended specification" %}
+        <div class="field-row">{% field cost_field label="Estimated unit cost ("|add:CURRENCY|add:")" %}</div>
+      </div>
+      {% endfor %}
+    </section>
+    <section class="panel">
+      <div class="sec-head"><span class="sec-num">2</span><h2>Specification sheets</h2></div>
+      {% with sheets=req.active_attachments %}{% if sheets %}<ul class="list-plain list-rows mb-16">{% for a in sheets %}{% if a.kind == 'spec_sheet' %}<li class="file-row">{% icon 'paperclip' %}<a href="{{ a.get_absolute_url }}">{{ a.original_name }}</a></li>{% endif %}{% endfor %}</ul>{% endif %}{% endwith %}
+      {% field form.spec_files %}
+      {% if form.procurement_reference %}{% field form.procurement_reference %}{% endif %}
+      {% field form.comment %}
+    </section>
+
+    {% elif transition.form == 'procurement' %}
+    <section class="panel">
+      {% field form.procurement_reference %}
+      {% field form.comment %}
+    </section>
+
+    {% elif transition.form == 'follow_up' %}
+    <section class="panel">
+      <p class="small muted">Procurement reference <span class="mono">{{ req.procurement_reference|default:"not recorded" }}</span>, sent {{ req.sent_to_procurement_at|date:"j M Y" }}.</p>
+      {% field form.comment %}
+      <div class="field-row">{% field form.next_follow_up_on %}</div>
+    </section>
+
+    {% elif transition.form == 'procurement_update' %}
+    <section class="panel">
+      <div class="field-row">{% field form.procurement_status %}{% field form.purchase_order %}</div>
+      <div class="field-row">{% field form.expected_delivery_on %}</div>
+      {% field form.comment %}
+    </section>
+
+    {% elif transition.form == 'delivery' %}
+    <section class="panel" id="delivered" data-formset="asset">
+      <div class="sec-head"><span class="sec-num">1</span><h2>Delivered items</h2><span class="sec-aside">One row per physical item</span></div>
+      <p class="small muted">Each row becomes an asset in the register, in stock and linked to this request. Already logged: {{ req.delivered_assets.count }}.</p>
+      {{ form.assets_formset.management_form }}
+      {% for e in form.assets_formset.non_form_errors %}<p class="error">{{ e }}</p>{% endfor %}
+      <div data-formset-list>
+        {% for af in form.assets_formset.forms %}{% include "requisitions/_asset_row.html" with form=af first=forloop.first %}{% endfor %}
+      </div>
+      <template data-formset-template>{% include "requisitions/_asset_row.html" with form=form.assets_formset.empty_form %}</template>
+      <button class="btn btn-secondary mt-16" type="button" data-formset-add hidden>{% icon 'plus' 'icon-sm' %}Add another item</button>
+    </section>
+    <section class="panel">
+      <div class="sec-head"><span class="sec-num">2</span><h2>Delivery details</h2></div>
+      <div class="field-row">{% field form.supplier %}{% field form.purchase_order_ref %}</div>
+      {% field form.delivery_files %}
+      {% field form.delivery_complete %}
+      {% field form.comment %}
+    </section>
+
+    {% elif transition.form == 'voucher' %}
+    <section class="panel panel-flush">
+      <div class="sec-head"><span class="sec-num">1</span><h2>Assets to issue</h2><span class="sec-aside">{% if show_all %}<a href="?">Show matching types only</a>{% else %}<a href="?all=1">Show all stock</a>{% endif %}</span></div>
+      {% with rows=form.stock_rows %}
+      {% if rows %}
+      <div class="table-wrap">
+        <table class="table table-stack">
+          <thead><tr><th scope="col"><span class="visually-hidden">Choose</span></th><th scope="col">Asset tag</th><th scope="col">Item</th><th scope="col">Serial number</th><th scope="col">Condition</th></tr></thead>
+          <tbody>
+          {% for widget, asset, own in rows %}
+            <tr>
+              <td data-label="">{{ widget.tag }}<label class="visually-hidden" for="{{ widget.id_for_label }}">Issue {{ asset.asset_tag }}</label></td>
+              <td data-label="Asset tag"><span class="ref">{{ asset.asset_tag }}</span>{% if own %}<span class="cell-sub">Delivered for this request</span>{% endif %}</td>
+              <td data-label="Item"><span class="cell-title">{{ asset.make_model }}</span><span class="cell-sub">{{ asset.category }} · {{ asset.specification|truncatechars:90 }}</span></td>
+              <td data-label="Serial"><span class="mono">{{ asset.serial_number|default:"None" }}</span></td>
+              <td data-label="Condition">{{ asset.get_condition_display }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if form.assets.errors %}<ul class="error" id="id_assets_error">{% for e in form.assets.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+      {% else %}
+      <div class="empty">{% icon 'package' %}<h3>Nothing suitable in stock</h3><p>{% if show_all %}The register has no assets in stock.{% else %}No in-stock assets match the requested types. <a href="?all=1">Show all stock</a>.{% endif %}</p></div>
+      {% endif %}
+      {% endwith %}
+    </section>
+    <section class="panel">
+      <div class="sec-head"><span class="sec-num">2</span><h2>Where it is going</h2></div>
+      <div class="field-row cols-3">{% field form.campus %}{% field form.building %}{% field form.office %}</div>
+      {% field form.notes %}
+      {% if form.replaced_collected %}
+      <div class="sec-head mt-24"><span class="sec-num">3</span><h3>The machine being replaced</h3></div>
+      <p class="small">{% if req.asset_to_replace %}<span class="ref">{{ req.asset_to_replace.asset_tag }}</span> {{ req.asset_to_replace.make_model }}, serial <span class="mono">{{ req.asset_to_replace.serial_number|default:"none" }}</span>{% endif %}</p>
+      <div class="field-row">{% field form.replaced_collected %}{% field form.replaced_condition %}</div>
+      {% field form.replaced_note %}
+      {% endif %}
+      {% field form.comment %}
+    </section>
+
+    {% elif transition.form == 'acknowledge' %}
+    {% if voucher %}
+    <section class="panel panel-flush">
+      <div class="sec-head"><span class="sec-num">1</span><h2>Issue voucher <span class="mono">{{ voucher.number }}</span></h2><span class="sec-aside">Issued by {{ voucher.issued_by.display_name }}</span></div>
+      <div class="table-wrap">
+        <table class="table table-stack">
+          <thead><tr><th scope="col">Asset tag</th><th scope="col">Item</th><th scope="col">Serial number</th><th scope="col">Specification</th><th scope="col">Condition</th></tr></thead>
+          <tbody>
+          {% for line in voucher.lines.all %}
+          <tr>
+            <td data-label="Asset tag"><span class="ref">{{ line.asset_tag }}</span></td>
+            <td data-label="Item">{{ line.make_model }}<span class="cell-sub">{{ line.category_name }}</span></td>
+            <td data-label="Serial"><span class="mono">{{ line.serial_number|default:"None" }}</span></td>
+            <td data-label="Specification" class="prose-box">{{ line.specification }}</td>
+            <td data-label="Condition">{{ line.get_condition_display }}</td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    {% endif %}
+    <section class="panel">
+      <div class="sec-head"><span class="sec-num">2</span><h2>Check before you sign</h2></div>
+      {% field form.confirm_serials %}
+      {% field form.confirm_specification %}
+      {% field form.confirm_condition %}
+      {% if form.comment %}{% field form.comment label="Comment (optional)" %}{% endif %}
+      <p class="small muted">Something does not match? <a href="{% url 'requisitions:action' req.public_id 'dispute' %}">Report a problem</a> instead. The Helpdesk will correct the voucher.</p>
+    </section>
+
+    {% else %}
+    {% if voucher and transition.code == 'dispute' %}
+    <section class="panel panel-tight">
+      <p class="mb-0">Voucher <span class="mono">{{ voucher.number }}</span>: {% for line in voucher.lines.all %}<span class="mono">{{ line.asset_tag }}</span> {{ line.make_model }} (serial <span class="mono">{{ line.serial_number|default:"none" }}</span>){% if not forloop.last %}; {% endif %}{% endfor %}</p>
+    </section>
+    {% endif %}
+    {% if form.comment %}
+    <section class="panel">
+      {% field form.comment %}
+    </section>
+    {% endif %}
+    {% endif %}
+
+    {% if signing %}
+    <section class="signature-box" aria-labelledby="sign-heading">
+      <h2 id="sign-heading" class="visually-hidden">Signature</h2>
+      <p class="statement">{{ statement }}</p>
+      {% field form.password %}
+    </section>
+    {% endif %}
+
+    <div class="form-actions">
+      <button class="btn {% if transition.tone == 'danger' %}btn-danger{% else %}btn-primary{% endif %}" type="submit">{% if signing %}{% icon 'pen-line' 'icon-sm' %}Sign and {{ transition.label|lower }}{% else %}{{ transition.label }}{% endif %}</button>
+      <a class="btn btn-quiet" href="{{ req.get_absolute_url }}">Back to the request</a>
+    </div>
+  </form>
+
+  <aside class="stack">
+    <section class="panel panel-tight">
+      <h2 class="mb-16">{{ req.title }}</h2>
+      <dl class="kv kv-stack">
+        <dt>Reference</dt><dd><span class="mono">{{ req.reference }}</span> · {{ req.procedure_number }}</dd>
+        <dt>Requested by</dt><dd>{{ req.requester.display_name }}{% if req.department %}, {{ req.department }}{% endif %}</dd>
+        <dt>Location</dt><dd>{{ req.location_text }}</dd>
+        <dt>Items</dt><dd>{% for i in items %}{{ i.quantity }} x {{ i.description }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</dd>
+        <dt>Justification</dt><dd class="prose-box">{{ req.justification|truncatechars:400 }}</dd>
+        <dt>You act as</dt><dd>{{ capacity.role_label }}{% if capacity.on_behalf_of %} for {{ capacity.on_behalf_of.display_name }}{% endif %}</dd>
+      </dl>
+      <p class="mt-16 small"><a href="{{ req.get_absolute_url }}">Full request and routing slip</a></p>
+    </section>
+  </aside>
+</div>
+{% endblock %}

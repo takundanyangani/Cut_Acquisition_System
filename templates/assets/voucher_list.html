@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Issue vouchers{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Issue vouchers</h1>
+    <p>{% if user.is_ict_staff %}Every hand-over of equipment under CUT ICT 40. A voucher is complete when the recipient signs for the serial numbers, specification and condition.{% else %}Vouchers for equipment issued to you. Sign each one when you receive the items.{% endif %}</p>
+  </div>
+</div>
+<nav class="tabs" aria-label="Voucher status">
+  <a href="{% url 'assets:vouchers' %}"{% if not status %} aria-current="page"{% endif %}>All</a>
+  {% for value, label in statuses %}<a href="?status={{ value }}"{% if status == value %} aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
+</nav>
+<div class="panel panel-flush">
+  {% if page.object_list %}
+  <div class="table-wrap">
+    <table class="table table-stack">
+      <thead><tr><th scope="col">Voucher</th><th scope="col">Request</th><th scope="col">Issued to</th><th scope="col">Status</th><th scope="col">Raised</th></tr></thead>
+      <tbody>
+      {% for v in page.object_list %}
+        <tr>
+          <td data-label="Voucher"><a class="ref" href="{{ v.get_absolute_url }}">{{ v.number }}</a></td>
+          <td data-label="Request"><a href="{{ v.requisition.get_absolute_url }}">{{ v.requisition.reference }}</a><span class="cell-sub">{{ v.requisition.title }}</span></td>
+          <td data-label="Issued to">{{ v.issued_to.display_name }}<span class="cell-sub">by {{ v.issued_by.display_name }}</span></td>
+          <td data-label="Status">{% if v.status == 'acknowledged' %}<span class="stamp" data-tone="ok">{% icon 'signature' %}Signed</span>{% elif v.status == 'awaiting' %}<span class="stamp" data-tone="warn">Awaiting signature</span>{% elif v.status == 'disputed' %}<span class="stamp" data-tone="danger">Disputed</span>{% else %}<span class="stamp">Withdrawn</span>{% endif %}</td>
+          <td data-label="Raised" class="nowrap">{{ v.created_at|date:"j M Y" }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty">{% icon 'receipt' %}<h3>No vouchers</h3><p>Vouchers appear when the Helpdesk issues equipment.</p></div>
+  {% endif %}
+</div>
+{% include "includes/pagination.html" %}
+{% endblock %}

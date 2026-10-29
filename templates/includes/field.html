@@ -1,0 +1,21 @@
+{% if is_check %}
+<div class="field{% if f.errors %} has-error{% endif %} {{ extra_class }}">
+  <label class="check" for="{{ f.id_for_label }}">{{ widget }}<span>{{ label }}{% if f.field.required %}<span class="req" aria-hidden="true">*</span>{% endif %}</span></label>
+  {% if f.help_text %}<p class="help" id="{{ f.auto_id }}_help">{{ f.help_text }}</p>{% endif %}
+  {% if f.errors %}<ul class="error" id="{{ f.auto_id }}_error">{% for e in f.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+</div>
+{% elif is_multi_check %}
+<fieldset class="field{% if f.errors %} has-error{% endif %} {{ extra_class }}">
+  <legend>{{ label }}</legend>
+  {% for option in f %}<label class="check" for="{{ option.id_for_label }}">{{ option.tag }}<span>{{ option.choice_label }}</span></label>{% endfor %}
+  {% if f.help_text %}<p class="help" id="{{ f.auto_id }}_help">{{ f.help_text }}</p>{% endif %}
+  {% if f.errors %}<ul class="error" id="{{ f.auto_id }}_error">{% for e in f.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+</fieldset>
+{% else %}
+<div class="field{% if f.errors %} has-error{% endif %} {{ extra_class }}">
+  <label for="{{ f.id_for_label }}"{% if hide_label %} class="visually-hidden"{% endif %}>{{ label }}{% if f.field.required %}<span class="req" aria-hidden="true">*</span><span class="visually-hidden"> (required)</span>{% endif %}</label>
+  {{ widget }}
+  {% if f.help_text %}<p class="help" id="{{ f.auto_id }}_help">{{ f.help_text }}</p>{% endif %}
+  {% if f.errors %}<ul class="error" id="{{ f.auto_id }}_error">{% for e in f.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+</div>
+{% endif %}

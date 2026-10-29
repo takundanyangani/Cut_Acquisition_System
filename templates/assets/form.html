@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}{% if asset %}Edit {{ asset.asset_tag }}{% else %}Register asset{% endif %}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="eyebrow"><a href="{% url 'assets:list' %}">Asset register</a> {% icon 'chevron-right' 'icon-sm' %} {% if asset %}<span class="mono">{{ asset.asset_tag }}</span>{% else %}New{% endif %}</p>
+    <h1>{% if asset %}Edit {{ asset.asset_tag }}{% else %}Register an asset{% endif %}</h1>
+    <p>{% if asset %}Status and holder are not edited here. They change through vouchers and the status panel, so each change is logged.{% else %}For stock ICT already holds. Items bought through a request are logged from the request's delivery step instead.{% endif %}</p>
+  </div>
+</div>
+<form class="form panel" method="post" novalidate>
+  {% csrf_token %}
+  {% include "includes/form_errors.html" %}
+  <div class="field-row cols-3">{% field form.category %}{% field form.asset_tag %}{% field form.serial_number %}</div>
+  <div class="field-row">{% field form.make %}{% field form.model %}</div>
+  {% field form.specification %}
+  <div class="field-row">{% field form.condition %}</div>
+  <div class="field-row cols-3">{% field form.campus %}{% field form.building %}{% field form.office %}</div>
+  <div class="field-row">{% field form.supplier %}{% field form.purchase_order_ref %}</div>
+  <div class="field-row">{% field form.acquired_on %}{% field form.warranty_expires_on %}</div>
+  {% field form.notes %}
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">{% if asset %}Save changes{% else %}Add to register{% endif %}</button>
+    <a class="btn btn-quiet" href="{% if asset %}{{ asset.get_absolute_url }}{% else %}{% url 'assets:list' %}{% endif %}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Notifications{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Notifications</h1><p>Updates on requests you raised or need to act on. The same messages go to your email.</p></div>
+  {% if unread_notifications %}
+  <form method="post" action="{% url 'core:mark_all_read' %}">{% csrf_token %}<button class="btn btn-secondary" type="submit">{% icon 'check' 'icon-sm' %}Mark all as read</button></form>
+  {% endif %}
+</div>
+<div class="panel panel-flush">
+  {% for n in page %}
+    <a class="note-item{% if n.is_unread %} is-unread{% endif %}" href="{% url 'core:open_notification' n.pk %}">
+      <span class="pip" aria-hidden="true"></span>
+      <span>
+        <span class="note-title">{% if n.is_unread %}<span class="visually-hidden">Unread: </span>{% endif %}{{ n.title }}</span>
+        {% if n.body %}<span class="note-body">{{ n.body|truncatechars:220 }}</span>{% endif %}
+        <span class="note-time">{{ n.created_at|date:"j M Y, H:i" }}</span>
+      </span>
+    </a>
+  {% empty %}
+    <div class="empty">{% icon 'bell' %}<h3>No notifications</h3><p>You will see updates here when your requests move or need you.</p></div>
+  {% endfor %}
+</div>
+{% include "includes/pagination.html" %}
+{% endblock %}

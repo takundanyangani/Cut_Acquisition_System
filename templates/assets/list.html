@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Asset register{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Asset register</h1>
+    <p>Every ICT asset, where it is and who holds it. Custody changes only through issue vouchers and logged returns.</p>
+  </div>
+  <div class="btn-row">
+    <a class="btn btn-secondary" href="{% url 'assets:export' %}?{{ request.GET.urlencode }}">{% icon 'file-spreadsheet' 'icon-sm' %}Export to Excel</a>
+    {% if can_edit %}<a class="btn btn-primary" href="{% url 'assets:create' %}">{% icon 'package-plus' 'icon-sm' %}Register asset</a>{% endif %}
+  </div>
+</div>
+<section class="stats" aria-label="Assets by status">
+  {% for status, count in status_counts %}{% if count %}<a class="stat" href="?status={{ status.value }}"><span class="stat-label">{{ status.label }}</span><span class="stat-value">{{ count }}</span></a>{% endif %}{% endfor %}
+</section>
+<form class="filters" method="get" role="search" aria-label="Filter assets">
+  <div class="field field-q"><label for="id_q">Search</label>{{ filter_form.q }}</div>
+  <div class="field"><label for="id_status">Status</label>{{ filter_form.status }}</div>
+  <div class="field"><label for="id_category">Type</label>{{ filter_form.category }}</div>
+  <button class="btn btn-secondary" type="submit">{% icon 'filter' 'icon-sm' %}Filter</button>
+  {% if request.GET %}<a class="btn btn-quiet" href="{{ request.path }}">Clear</a>{% endif %}
+</form>
+<div class="panel panel-flush">
+  {% if page.object_list %}
+  <div class="table-wrap">
+    <table class="table table-stack">
+      <thead><tr><th scope="col">Asset tag</th><th scope="col">Item</th><th scope="col">Serial number</th><th scope="col">Status</th><th scope="col">Holder or location</th></tr></thead>
+      <tbody>
+      {% for a in page.object_list %}
+        <tr>
+          <td data-label="Asset tag"><a class="ref" href="{{ a.get_absolute_url }}">{{ a.asset_tag }}</a></td>
+          <td data-label="Item"><span class="cell-title">{{ a.make_model }}</span><span class="cell-sub">{{ a.category }} · {{ a.get_condition_display }}</span></td>
+          <td data-label="Serial"><span class="mono">{{ a.serial_number|default:"None" }}</span></td>
+          <td data-label="Status"><span class="stamp" data-tone="{% if a.status == 'in_stock' %}ok{% elif a.status == 'allocated' %}info{% elif a.status == 'reserved' or a.status == 'returned' or a.status == 'in_repair' %}warn{% elif a.status == 'lost' %}danger{% else %}neutral{% endif %}">{{ a.get_status_display }}</span></td>
+          <td data-label="Holder">{% if a.holder %}{{ a.holder.display_name }}{% endif %}<span class="cell-sub">{{ a.location_text }}</span></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty">{% icon 'package' %}<h3>No assets match</h3><p>Change the filters, or register stock that ICT already holds.</p></div>
+  {% endif %}
+</div>
+{% include "includes/pagination.html" %}
+{% endblock %}

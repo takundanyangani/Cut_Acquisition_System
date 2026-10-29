@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}{{ asset.asset_tag }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="eyebrow">{% if user.is_ict_staff %}<a href="{% url 'assets:list' %}">Asset register</a>{% else %}<a href="{% url 'accounts:profile' %}">My equipment</a>{% endif %} {% icon 'chevron-right' 'icon-sm' %} <span class="mono">{{ asset.asset_tag }}</span></p>
+    <h1>{{ asset.make_model }}</h1>
+    <p>{{ asset.category }} · serial <span class="mono">{{ asset.serial_number|default:"none" }}</span></p>
+  </div>
+  <div class="cluster">
+    <span class="stamp stamp-lg" data-tone="{% if asset.status == 'in_stock' %}ok{% elif asset.status == 'allocated' %}info{% elif asset.status == 'lost' %}danger{% elif asset.status == 'disposed' %}neutral{% else %}warn{% endif %}">{{ asset.get_status_display }}</span>
+    {% if can_edit %}<a class="btn btn-secondary btn-sm" href="{% url 'assets:edit' asset.asset_tag %}">{% icon 'pen-line' 'icon-sm' %}Edit details</a>{% endif %}
+  </div>
+</div>
+<div class="grid grid-main-side">
+  <div class="stack">
+    <section class="panel">
+      <div class="sec-head"><span class="sec-num">1</span><h2>Details</h2></div>
+      <dl class="kv">
+        <dt>Specification</dt><dd class="prose-box">{{ asset.specification }}</dd>
+        <dt>Condition</dt><dd>{{ asset.get_condition_display }}</dd>
+        <dt>Holder</dt><dd>{{ asset.holder.display_name|default:"ICT stores" }}</dd>
+        <dt>Location</dt><dd>{{ asset.location_text|default:"Not recorded" }}</dd>
+        <dt>Supplier</dt><dd>{{ asset.supplier|default:"Not recorded" }}{% if asset.purchase_order_ref %} · PO <span class="mono">{{ asset.purchase_order_ref }}</span>{% endif %}</dd>
+        <dt>Acquired</dt><dd>{{ asset.acquired_on|date:"j M Y"|default:"Not recorded" }}</dd>
+        <dt>Warranty ends</dt><dd>{{ asset.warranty_expires_on|date:"j M Y"|default:"Not recorded" }}</dd>
+        {% if asset.source_requisition %}<dt>Bought for</dt><dd><a class="ref" href="{{ asset.source_requisition.get_absolute_url }}">{{ asset.source_requisition.reference }}</a></dd>{% endif %}
+        {% if asset.notes %}<dt>Notes</dt><dd class="prose-box">{{ asset.notes }}</dd>{% endif %}
+      </dl>
+    </section>
+    <section class="panel panel-flush">
+      <div class="sec-head"><span class="sec-num">2</span><h2>Movement history</h2><span class="sec-aside">Newest first</span></div>
+      <div class="table-wrap">
+        <table class="table table-stack">
+          <thead><tr><th scope="col">When</th><th scope="col">Movement</th><th scope="col">To</th><th scope="col">By</th></tr></thead>
+          <tbody>
+          {% for m in movements %}
+            <tr>
+              <td data-label="When" class="nowrap">{{ m.created_at|date:"j M Y, H:i" }}</td>
+              <td data-label="Movement"><span class="cell-title">{{ m.get_kind_display }}</span>{% if m.note %}<span class="cell-sub">{{ m.note }}</span>{% endif %}{% if m.voucher %}<span class="cell-sub">Voucher <a href="{{ m.voucher.get_absolute_url }}">{{ m.voucher.number }}</a></span>{% endif %}</td>
+              <td data-label="To">{% if m.to_holder %}{{ m.to_holder.display_name }}{% else %}{{ m.get_to_status_display }}{% endif %}<span class="cell-sub">{{ m.location_text }}</span></td>
+              <td data-label="By">{{ m.performed_by.display_name|default:"System" }}</td>
+            </tr>
+          {% empty %}<tr><td colspan="4" class="muted">No movements recorded.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+  <aside class="stack">
+    {% if status_form %}
+    <section class="panel action-panel">
+      <h2 class="mb-16">Record a status change</h2>
+      <p class="small muted">Issuing and re-allocating happen through issue vouchers. Use this for returns, repairs, losses and disposal.</p>
+      <form method="post" action="{% url 'assets:status' asset.asset_tag %}" novalidate>
+        {% csrf_token %}
+        {% field status_form.status %}
+        {% field status_form.note %}
+        <button class="btn btn-primary btn-block" type="submit">Save change</button>
+      </form>
+    </section>
+    {% endif %}
+    {% if voucher_lines %}
+    <section class="panel panel-tight">
+      <h3 class="mb-16">Issue vouchers</h3>
+      <ul class="list-plain list-rows">{% for line in voucher_lines %}<li><a class="ref" href="{{ line.voucher.get_absolute_url }}">{{ line.voucher.number }}</a> <span class="small muted">{{ line.voucher.get_status_display }}, {{ line.voucher.created_at|date:"j M Y" }}</span></li>{% endfor %}</ul>
+    </section>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

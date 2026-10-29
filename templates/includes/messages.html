@@ -1,0 +1,11 @@
+{% load ui %}{% if messages %}
+<ul class="messages" aria-live="polite">
+  {% for message in messages %}
+  <li class="alert alert-{{ message.tags|default:'info' }}" role="{% if message.tags == 'error' %}alert{% else %}status{% endif %}">
+    {% if message.tags == 'success' %}{% icon 'circle-check' %}{% elif message.tags == 'error' %}{% icon 'triangle-alert' %}{% elif message.tags == 'warning' %}{% icon 'triangle-alert' %}{% else %}{% icon 'info' %}{% endif %}
+    <div class="alert-body">{{ message }}</div>
+    <button class="icon-button alert-close" type="button" data-dismiss aria-label="Dismiss message">{% icon 'x' 'icon-sm' %}</button>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}

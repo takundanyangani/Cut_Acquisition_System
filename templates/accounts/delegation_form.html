@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}New delegation{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="eyebrow"><a href="{% url 'accounts:delegations' %}">Delegations</a> {% icon 'chevron-right' 'icon-sm' %} New</p>
+    <h1>Delegate your role</h1>
+    <p>The acting officer sees your queue for this period and signs as acting for you. You can end the delegation early at any time.</p>
+  </div>
+</div>
+<div class="panel form">
+  {% include "includes/form_errors.html" %}
+  <form method="post" novalidate>
+    {% csrf_token %}
+    <div class="field-row">{% field form.role %}{% field form.delegate %}</div>
+    <div class="field-row">{% field form.starts_at %}{% field form.ends_at %}</div>
+    {% field form.reason %}
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">Save delegation</button>
+      <a class="btn btn-quiet" href="{% url 'accounts:delegations' %}">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

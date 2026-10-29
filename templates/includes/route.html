@@ -1,0 +1,10 @@
+{% load ui %}<ol class="route" aria-label="Progress through {{ req.procedure_number }}">
+  {% for step in route %}
+  <li class="route-step" data-status="{{ step.status }}"{% if step.status == 'current' or step.status == 'returned' %} aria-current="step"{% endif %}>
+    <span class="route-marker" aria-hidden="true">{% if step.status == 'done' %}{% icon 'check' %}{% elif step.status == 'stopped' %}{% icon 'x' %}{% elif step.status == 'returned' %}{% icon 'undo-2' %}{% else %}{{ forloop.counter }}{% endif %}</span>
+    <span>{{ step.label }}
+      {% if step.status == 'done' %}<span class="visually-hidden">(done)</span>{% elif step.status == 'current' %}<span class="route-note">Now</span>{% elif step.status == 'returned' %}<span class="route-note">Returned to requester</span>{% elif step.status == 'stopped' %}<span class="route-note">Closed here</span>{% elif step.status == 'skipped' %}<span class="route-note">Not needed</span>{% endif %}
+    </span>
+  </li>
+  {% endfor %}
+</ol>

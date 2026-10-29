@@ -1,0 +1,23 @@
+from django.urls import path
+
+from . import views
+
+app_name = "accounts"
+
+urlpatterns = [
+    path("sign-in/", views.LoginView.as_view(), name="login"),
+    path("sign-out/", views.LogoutView.as_view(), name="logout"),
+    path("password/change/", views.PasswordChangeView.as_view(), name="password_change"),
+    path("password/reset/", views.PasswordResetView.as_view(), name="password_reset"),
+    path("password/reset/sent/", views.PasswordResetDoneView.as_view(), name="password_reset_done"),
+    path(
+        "password/reset/<uidb64>/<token>/",
+        views.PasswordResetConfirmView.as_view(),
+        name="password_reset_confirm",
+    ),
+    path("password/reset/complete/", views.PasswordResetCompleteView.as_view(), name="password_reset_complete"),
+    path("profile/", views.profile, name="profile"),
+    path("delegations/", views.delegation_list, name="delegations"),
+    path("delegations/new/", views.delegation_create, name="delegation_create"),
+    path("delegations/<int:pk>/end/", views.delegation_revoke, name="delegation_revoke"),
+]

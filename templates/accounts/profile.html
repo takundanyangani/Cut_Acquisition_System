@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Profile{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ user.display_name }}</h1>
+    <p>{{ user.job_title|default:"Staff member" }}{% if user.department %} · {{ user.department }}{% endif %}</p>
+  </div>
+</div>
+
+<div class="grid grid-main-side">
+  <div class="stack">
+    <section class="panel" aria-labelledby="assets-heading">
+      <div class="sec-head"><span class="sec-num">1</span><h2 id="assets-heading">ICT equipment you hold</h2><span class="sec-aside">{{ assets|length }} item{{ assets|length|pluralize }}</span></div>
+      {% if assets %}
+      <div class="table-wrap">
+        <table class="table table-stack">
+          <thead><tr><th scope="col">Asset tag</th><th scope="col">Item</th><th scope="col">Serial number</th><th scope="col">Status</th></tr></thead>
+          <tbody>
+          {% for a in assets %}
+            <tr>
+              <td data-label="Asset tag"><a class="ref" href="{{ a.get_absolute_url }}">{{ a.asset_tag }}</a></td>
+              <td data-label="Item"><span class="cell-title">{{ a.make_model }}</span><span class="cell-sub">{{ a.category }}</span></td>
+              <td data-label="Serial"><span class="mono">{{ a.serial_number|default:"None" }}</span></td>
+              <td data-label="Status">{{ a.get_status_display }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p class="help muted mt-16">If anything here is wrong, tell {{ HELPDESK_CONTACT }}. This list is the asset register record of what you signed for.</p>
+      {% else %}
+      <div class="empty">{% icon 'package' %}<h3>No equipment on record</h3><p>Items appear here after you sign an issue voucher.</p></div>
+      {% endif %}
+    </section>
+
+    <section class="panel" aria-labelledby="location-heading">
+      <div class="sec-head"><span class="sec-num">2</span><h2 id="location-heading">Your usual location</h2></div>
+      {% include "includes/form_errors.html" %}
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="field-row">{% field form.campus %}{% field form.building %}</div>
+        <div class="field-row">{% field form.office %}{% field form.phone_extension %}</div>
+        <div class="form-actions"><button class="btn btn-primary" type="submit">Save location</button></div>
+      </form>
+    </section>
+  </div>
+
+  <aside class="stack">
+    <section class="panel panel-tight">
+      <h3 class="mb-16">Account</h3>
+      <dl class="kv kv-stack">
+        <dt>Email</dt><dd>{{ user.email }}</dd>
+        <dt>Staff number</dt><dd>{{ user.staff_number|default:"Not recorded" }}</dd>
+        <dt>Roles</dt><dd>{% for label in user.role_labels %}<span class="stamp" data-tone="info">{{ label }}</span> {% empty %}Requester{% endfor %}</dd>
+        <dt>Last sign-in</dt><dd>{{ user.last_login|date:"j M Y, H:i"|default:"First visit" }}</dd>
+      </dl>
+      <div class="btn-row mt-16"><a class="btn btn-secondary btn-sm" href="{% url 'accounts:password_change' %}">{% icon 'key-round' 'icon-sm' %}Change password</a></div>
+    </section>
+    {% if delegations_received %}
+    <section class="panel panel-tight">
+      <h3 class="mb-16">You are acting for</h3>
+      <ul class="list-plain list-rows">
+        {% for d in delegations_received %}<li><strong>{{ d.delegator.display_name }}</strong><br><span class="small muted">{{ d.get_role_display }} until {{ d.ends_at|date:"j M Y, H:i" }}</span></li>{% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

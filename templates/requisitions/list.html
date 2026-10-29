@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}{{ heading }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ heading }}</h1>
+    {% if intro %}<p>{{ intro }}</p>{% endif %}
+  </div>
+  <div class="btn-row">
+    {% if can_export %}<a class="btn btn-secondary" href="{% url 'requisitions:export' %}?{{ request.GET.urlencode }}">{% icon 'file-spreadsheet' 'icon-sm' %}Export to Excel</a>{% endif %}
+    <a class="btn btn-primary" href="{% url 'requisitions:choose_kind' %}">{% icon 'file-plus' 'icon-sm' %}New request</a>
+  </div>
+</div>
+
+<nav class="tabs" aria-label="Request lists">
+  <a href="{% url 'requisitions:queue' %}"{% if tab == 'queue' %} aria-current="page"{% endif %}>Awaiting my action{% if queue_count %} <span class="tab-count">{{ queue_count }}</span>{% endif %}</a>
+  <a href="{% url 'requisitions:mine' %}"{% if tab == 'mine' %} aria-current="page"{% endif %}>My requests</a>
+  {% if nav.all_requests %}<a href="{% url 'requisitions:all' %}"{% if tab == 'all' %} aria-current="page"{% endif %}>All requests</a>{% endif %}
+  {% if nav.archive %}<a href="{% url 'requisitions:archive' %}"{% if tab == 'archive' %} aria-current="page"{% endif %}>Archive</a>{% endif %}
+  {% if tab == 'search' %}<a href="#" aria-current="page">Search</a>{% endif %}
+</nav>
+
+{% if filter_form %}
+<form class="filters" method="get" role="search" aria-label="Filter requests">
+  <div class="field field-q"><label for="id_q">Search</label>{{ filter_form.q }}</div>
+  <div class="field"><label for="id_kind">Type</label>{{ filter_form.kind }}</div>
+  <div class="field"><label for="id_state">Stage</label>{{ filter_form.state }}</div>
+  <button class="btn btn-secondary" type="submit">{% icon 'filter' 'icon-sm' %}Filter</button>
+  {% if request.GET %}<a class="btn btn-quiet" href="{{ request.path }}">Clear</a>{% endif %}
+</form>
+{% endif %}
+
+<div class="panel panel-flush">
+  {% if page.object_list %}
+  <div class="table-wrap">
+    <table class="table table-stack">
+      <thead>
+        <tr>
+          <th scope="col">Reference</th>
+          <th scope="col">Request</th>
+          {% if tab != 'mine' %}<th scope="col">Requester</th>{% endif %}
+          <th scope="col">Stage</th>
+          <th scope="col">With</th>
+          <th scope="col">{% if tab == 'archive' %}Closed{% else %}Timing{% endif %}</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in page.object_list %}
+        <tr>
+          <td data-label="Reference"><a class="ref" href="{{ r.get_absolute_url }}">{{ r.display_reference }}</a></td>
+          <td data-label="Request"><a class="cell-title" href="{{ r.get_absolute_url }}">{{ r.title }}</a><span class="cell-sub">{{ r.get_kind_display }} · {{ r.procedure_number }}</span></td>
+          {% if tab != 'mine' %}<td data-label="Requester">{{ r.requester.display_name }}<span class="cell-sub">{{ r.department|default:"" }}</span></td>{% endif %}
+          <td data-label="Stage">{% state_stamp r %}</td>
+          <td data-label="With">{% if r.is_open %}{{ r|holder_name }}{% else %}<span class="muted">Closed</span>{% endif %}</td>
+          <td data-label="Timing" class="nowrap">
+            {% if tab == 'archive' %}{{ r.closed_at|date:"j M Y" }}
+            {% else %}{% due_text r as due_label %}{% if due_label %}<span class="{% if r.is_overdue %}due-late{% else %}due{% endif %}">{{ due_label }}</span>{% else %}<span class="muted">Updated {{ r.updated_at|date:"j M" }}</span>{% endif %}{% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty">
+    {% if tab == 'queue' %}{% icon 'inbox' %}<h3>Nothing is waiting for you</h3><p>Requests that need your decision or signature appear here.</p>
+    {% elif tab == 'mine' %}{% icon 'folder-open' %}<h3>No requests yet</h3><p>Start a request for a laptop, monitor, projector or any other ICT equipment.</p><a class="btn btn-primary" href="{% url 'requisitions:choose_kind' %}">Start a request</a>
+    {% elif tab == 'search' %}{% icon 'search' %}<h3>No matches</h3><p>Try a full reference such as EQR-2026-0042, an asset tag, or a word from the title.</p>
+    {% else %}{% icon 'files' %}<h3>No requests match</h3><p>Change the filters or clear them to see more.</p>{% endif %}
+  </div>
+  {% endif %}
+</div>
+{% include "includes/pagination.html" %}
+{% endblock %}

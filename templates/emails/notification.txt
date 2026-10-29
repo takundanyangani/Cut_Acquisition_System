@@ -1,0 +1,14 @@
+{% autoescape off %}Dear {{ user.short_name }},
+
+{{ title }}
+
+{% if body %}{{ body }}
+
+{% endif %}Open it here:
+{{ url }}
+
+You receive this because you raised the request or hold a role in its approval route.
+
+{{ unit_name }}
+{{ org_name }}
+{% endautoescape %}

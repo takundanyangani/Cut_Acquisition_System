@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}{{ req.display_reference }} {{ req.title }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="eyebrow"><a href="{% if is_requester %}{% url 'requisitions:mine' %}{% else %}{% url 'requisitions:all' %}{% endif %}">Requests</a> {% icon 'chevron-right' 'icon-sm' %} <span class="mono">{{ req.display_reference }}</span></p>
+    <h1>{{ req.title }}</h1>
+  </div>
+  <div class="cluster">
+    {% state_stamp req large=True %}
+    {% if req.reference %}<a class="btn btn-secondary btn-sm" href="{% url 'requisitions:print' req.public_id %}">{% icon 'printer' 'icon-sm' %}Print record</a>{% endif %}
+  </div>
+</div>
+
+<div class="docket" role="group" aria-label="Document details">
+  <div class="docket-cell"><span class="docket-label">Procedure No</span><span class="docket-value">{{ req.procedure_number }}</span></div>
+  <div class="docket-cell"><span class="docket-label">Title</span><span class="docket-value">{{ req.procedure_title }}</span></div>
+  <div class="docket-cell"><span class="docket-label">Reference</span><span class="docket-value mono">{{ req.display_reference }}</span></div>
+  <div class="docket-cell"><span class="docket-label">Requested by</span><span class="docket-value">{{ req.requester.display_name }}</span></div>
+  <div class="docket-cell"><span class="docket-label">Location</span><span class="docket-value">{{ req.location_text|default:"Not given" }}</span></div>
+  <div class="docket-cell"><span class="docket-label">Submitted</span><span class="docket-value">{{ req.submitted_at|date:"j M Y"|default:"Not yet" }}</span></div>
+</div>
+
+{% if req.state != 'draft' %}{% include "includes/route.html" %}{% endif %}
+
+{% if req.archived_at %}
+<div class="alert alert-info alert-tint mb-24" role="note">{% icon 'archive' %}<div class="alert-body">Archived on {{ req.archived_at|date:"j M Y" }} under the retention rules for {{ req.procedure_number }}. The record is read-only.</div></div>
+{% endif %}
+{% if blocked %}
+<div class="alert alert-warning alert-tint mb-24" role="alert">{% icon 'triangle-alert' %}<div class="alert-body"><strong>This request cannot move.</strong> {{ blocked }}</div></div>
+{% endif %}
+{% if req.state == 'returned' and is_requester and last_return %}
+<div class="alert alert-warning alert-tint mb-24" role="alert">{% icon 'undo-2' %}<div class="alert-body"><strong>{{ last_return.actor_name }} returned this request to you on {{ last_return.created_at|date:"j M" }}.</strong><br><span class="prose-box">{{ last_return.comment }}</span></div></div>
+{% endif %}
+
+<div class="grid grid-main-side">
+  <div class="stack">
+    <section class="panel" aria-labelledby="s1">
+      <div class="sec-head"><span class="sec-num">1</span><h2 id="s1">Request</h2><span class="sec-aside">{{ req.get_kind_display }}</span></div>
+      <dl class="kv">
+        {% if req.kind == 'RPL' %}
+        <dt>Machine to replace</dt>
+        <dd>{% if req.asset_to_replace %}<a class="ref" href="{{ req.asset_to_replace.get_absolute_url }}">{{ req.asset_to_replace.asset_tag }}</a> {{ req.asset_to_replace.make_model }}, serial <span class="mono">{{ req.asset_to_replace.serial_number|default:"none" }}</span>{% else %}{{ req.replaced_item_description }}{% endif %}</dd>
+        <dt>Reason</dt><dd>{{ req.get_replacement_reason_display }}</dd>
+        {% endif %}
+        <dt>{% if req.kind == 'RPL' %}Explanation{% else %}Justification{% endif %}</dt><dd class="prose-box">{{ req.justification }}</dd>
+        <dt>Priority</dt><dd>{% if req.priority == 'urgent' %}<span class="stamp" data-tone="warn">Urgent</span>{% else %}Routine{% endif %}{% if req.needed_by %} · needed by {{ req.needed_by|date:"j M Y" }}{% endif %}</dd>
+        <dt>Department</dt><dd>{{ req.department|default:"Not recorded" }}</dd>
+        {% if req.csm_recommends is not None %}<dt>CSM position</dt><dd>{% if req.csm_recommends %}<span class="stamp" data-tone="ok">Recommended</span>{% else %}<span class="stamp" data-tone="warn">Not recommended</span>{% endif %}</dd>{% endif %}
+        {% if req.assigned_technician %}<dt>Technician</dt><dd>{{ req.assigned_technician.display_name }}</dd>{% endif %}
+        {% if req.fulfilment_route %}<dt>Fulfilment</dt><dd>{{ req.get_fulfilment_route_display }}</dd>{% endif %}
+        {% if req.procurement_reference %}<dt>Procurement ref</dt><dd><span class="mono">{{ req.procurement_reference }}</span>{% if req.sent_to_procurement_at %} · sent {{ req.sent_to_procurement_at|date:"j M Y" }}{% endif %}</dd>{% endif %}
+        {% if req.procurement_status %}<dt>Procurement status</dt><dd>{{ req.procurement_status }}{% if req.expected_delivery_on %} · expected {{ req.expected_delivery_on|date:"j M Y" }}{% endif %}</dd>{% endif %}
+        {% if req.state == 'with_procurement' and req.next_follow_up_on %}<dt>Next follow-up</dt><dd class="{% if req.follow_up_due %}due-late{% endif %}">{{ req.next_follow_up_on|date:"l j M Y" }}</dd>{% endif %}
+        {% if req.converted_from %}<dt>Raised from</dt><dd><a class="ref" href="{{ req.converted_from.get_absolute_url }}">{{ req.converted_from.reference }}</a> (allocation request, no stock)</dd>{% endif %}
+        {% if converted_to %}<dt>Continued as</dt><dd><a class="ref" href="{{ converted_to.get_absolute_url }}">{{ converted_to.reference }}</a> equipment request</dd>{% endif %}
+      </dl>
+    </section>
+
+    <section class="panel panel-flush" aria-labelledby="s2">
+      <div class="sec-head"><span class="sec-num">2</span><h2 id="s2">Items</h2><span class="sec-aside">{{ items|length }} line{{ items|length|pluralize }}</span></div>
+      <div class="table-wrap">
+        <table class="table table-stack">
+          <thead><tr><th scope="col">Item</th><th scope="col" class="num">Qty</th><th scope="col">Recommended specification</th><th scope="col" class="num">Est. unit cost</th></tr></thead>
+          <tbody>
+          {% for i in items %}
+            <tr>
+              <td data-label="Item"><span class="cell-title">{{ i.description }}</span><span class="cell-sub">{{ i.category }}{% if i.requester_notes %} · {{ i.requester_notes }}{% endif %}</span></td>
+              <td data-label="Qty" class="num">{{ i.quantity }}</td>
+              <td data-label="Specification" class="prose-box">{{ i.recommended_specification|default:"Not yet specified" }}</td>
+              <td data-label="Est. cost" class="num nowrap">{% if i.estimated_unit_cost is not None %}{{ CURRENCY }} {{ i.estimated_unit_cost|floatformat:"2g" }}{% else %}<span class="muted">None</span>{% endif %}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel" id="attachments" aria-labelledby="s3">
+      <div class="sec-head"><span class="sec-num">3</span><h2 id="s3">Attachments</h2><span class="sec-aside">{{ attachments|length }} file{{ attachments|length|pluralize }}</span></div>
+      {% if attachments %}
+      <ul class="list-plain list-rows">
+        {% for a in attachments %}
+        <li class="file-row">
+          {% icon 'paperclip' %}
+          <span><a href="{{ a.get_absolute_url }}">{{ a.original_name }}</a><br><span class="file-meta">{{ a.get_kind_display }} · {{ a.size|filesize }} · {{ a.uploaded_by.display_name }}, {{ a.uploaded_at|date:"j M Y" }}</span></span>
+          {% if a.pk in removable_ids %}
+          <form method="post" action="{% url 'requisitions:remove_attachment' a.public_id %}">{% csrf_token %}<button class="btn btn-quiet btn-sm" type="submit" aria-label="Remove {{ a.original_name }}">{% icon 'trash-2' 'icon-sm' %}Remove</button></form>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="muted small">No files attached.</p>
+      {% endif %}
+      {% if can_upload %}
+      <form class="mt-16" method="post" action="{% url 'requisitions:upload' req.public_id %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="field-row">{% field attachment_form.kind %}{% field attachment_form.files %}</div>
+        <button class="btn btn-secondary btn-sm" type="submit">{% icon 'upload' 'icon-sm' %}Upload</button>
+      </form>
+      {% endif %}
+    </section>
+
+    {% if vouchers %}
+    <section class="panel panel-flush" aria-labelledby="s4">
+      <div class="sec-head"><span class="sec-num">4</span><h2 id="s4">Issue vouchers</h2><span class="sec-aside">CUT ICT 40</span></div>
+      <div class="table-wrap">
+        <table class="table table-stack">
+          <thead><tr><th scope="col">Voucher</th><th scope="col">Items</th><th scope="col">Status</th><th scope="col">Issued by</th></tr></thead>
+          <tbody>
+          {% for v in vouchers %}
+            <tr>
+              <td data-label="Voucher"><a class="ref" href="{{ v.get_absolute_url }}">{{ v.number }}</a><span class="cell-sub">{{ v.created_at|date:"j M Y" }}</span></td>
+              <td data-label="Items">{% for line in v.lines.all %}<span class="mono">{{ line.asset_tag }}</span> {{ line.make_model }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</td>
+              <td data-label="Status">{% if v.status == 'acknowledged' %}<span class="stamp" data-tone="ok">{% icon 'signature' %}Signed {{ v.acknowledged_at|date:"j M" }}</span>{% elif v.status == 'awaiting' %}<span class="stamp" data-tone="warn">Awaiting signature</span>{% elif v.status == 'disputed' %}<span class="stamp" data-tone="danger">Disputed</span>{% else %}<span class="stamp">Withdrawn</span>{% endif %}</td>
+              <td data-label="Issued by">{{ v.issued_by.display_name }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    {% endif %}
+
+    {% if delivered_assets %}
+    <section class="panel panel-flush" aria-labelledby="s5">
+      <div class="sec-head"><span class="sec-num">5</span><h2 id="s5">Delivered and logged</h2><span class="sec-aside">CUT ICT 42 §5.6</span></div>
+      <div class="table-wrap">
+        <table class="table table-stack">
+          <thead><tr><th scope="col">Asset tag</th><th scope="col">Item</th><th scope="col">Serial number</th><th scope="col">Status</th></tr></thead>
+          <tbody>
+          {% for a in delivered_assets %}
+            <tr>
+              <td data-label="Asset tag">{% if user.is_ict_staff %}<a class="ref" href="{{ a.get_absolute_url }}">{{ a.asset_tag }}</a>{% else %}<span class="ref">{{ a.asset_tag }}</span>{% endif %}</td>
+              <td data-label="Item">{{ a.make_model }}<span class="cell-sub">{{ a.category }}</span></td>
+              <td data-label="Serial"><span class="mono">{{ a.serial_number|default:"None" }}</span></td>
+              <td data-label="Status">{{ a.get_status_display }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    {% endif %}
+
+    <section class="panel" id="notes" aria-labelledby="s6">
+      <div class="sec-head"><span class="sec-num">{% if vouchers and delivered_assets %}6{% elif vouchers or delivered_assets %}5{% else %}4{% endif %}</span><h2 id="s6">Notes</h2><span class="sec-aside">Not part of the approval</span></div>
+      {% if notes %}
+      <ul class="list-plain list-rows">
+        {% for n in notes %}<li><strong>{{ n.actor_name }}</strong> <span class="small muted">{{ n.created_at|date:"j M Y, H:i" }}</span><p class="slip-comment">{{ n.comment }}</p></li>{% endfor %}
+      </ul>
+      {% elif not can_comment %}
+      <p class="muted small">No notes.</p>
+      {% endif %}
+      {% if can_comment %}
+      <form class="mt-16" method="post" action="{% url 'requisitions:add_note' req.public_id %}">
+        {% csrf_token %}
+        {% field note_form.note %}
+        <button class="btn btn-secondary btn-sm" type="submit">{% icon 'message-square' 'icon-sm' %}Add note</button>
+      </form>
+      {% endif %}
+    </section>
+  </div>
+
+  <aside class="stack side-first" aria-label="Actions and routing slip">
+    <section class="panel action-panel" aria-labelledby="action-heading">
+      <h2 id="action-heading" class="mb-16">{% if primary_actions or other_actions %}Your action{% else %}Status{% endif %}</h2>
+      {% if req.is_open %}
+      <div class="holder">
+        <span class="avatar" aria-hidden="true">{% icon 'user' 'icon-sm' %}</span>
+        <div>
+          <div class="holder-label">With</div>
+          <div class="holder-name">{{ holder }}</div>
+          <div class="due">Since {{ req.state_entered_at|date:"j M, H:i" }}{% due_text req as due_label %}{% if due_label %} · <span class="{% if req.is_overdue %}due-late{% endif %}">{{ due_label }}</span>{% endif %}</div>
+        </div>
+      </div>
+      {% elif req.state != 'draft' %}
+      <p class="small">Closed on {{ req.closed_at|date:"j M Y, H:i" }}.</p>
+      {% endif %}
+
+      {% if req.state == 'draft' and is_requester %}
+        <p class="small">Only you can see this draft.</p>
+        <a class="btn btn-primary" href="{% url 'requisitions:edit' req.public_id %}">{% icon 'pen-line' 'icon-sm' %}Continue editing{% icon 'arrow-right' 'icon-sm' %}</a>
+        <form method="post" action="{% url 'requisitions:discard' req.public_id %}" class="mt-16">{% csrf_token %}<button class="btn btn-danger-outline btn-block" type="submit">{% icon 'trash-2' 'icon-sm' %}Discard draft</button></form>
+      {% else %}
+        {% if req.state == 'returned' and is_requester %}
+        <a class="btn btn-primary" href="{% url 'requisitions:edit' req.public_id %}">{% icon 'pen-line' 'icon-sm' %}Edit and resubmit{% icon 'arrow-right' 'icon-sm' %}</a>
+        {% endif %}
+        {% for t, cap in primary_actions %}{% if t.code != 'submit' %}
+        <a class="btn {{ t.tone|button_class }}" href="{% url 'requisitions:action' req.public_id t.code %}">{% icon t|tone_icon 'icon-sm' %}{{ t.label }}{% if t.sign %}<span class="visually-hidden"> (signed)</span>{% endif %}{% icon 'arrow-right' 'icon-sm' %}</a>
+        {% endif %}{% endfor %}
+        {% if primary_actions %}
+          {% with cap=primary_actions.0.1 %}{% if cap.on_behalf_of %}<p class="small muted mt-16">You act as {{ cap.role_label }} for {{ cap.on_behalf_of.display_name }}.</p>{% endif %}{% endwith %}
+        {% elif not other_actions and req.is_open and not is_requester %}
+          <p class="small muted">Nothing for you to do at this stage.</p>
+        {% elif not other_actions and req.is_open and req.state != 'returned' and req.state != 'awaiting_ack' %}
+          <p class="small muted">Nothing for you to do. You will get an email when the request moves.</p>
+        {% endif %}
+        {% if other_actions %}
+        <hr>
+        {% for t, cap in other_actions %}
+        <a class="btn {{ t.tone|button_class }} btn-sm" href="{% url 'requisitions:action' req.public_id t.code %}">{% icon t|tone_icon 'icon-sm' %}{{ t.label }}</a>
+        {% endfor %}
+        {% endif %}
+      {% endif %}
+    </section>
+
+    {% if req.reference %}
+    <section class="panel" aria-labelledby="slip-heading">
+      <div class="sec-head"><h2 id="slip-heading">Routing slip</h2><span class="sec-aside">{{ slip|length }} entr{{ slip|length|pluralize:"y,ies" }}</span></div>
+      {% include "includes/slip.html" with entries=slip %}
+    </section>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

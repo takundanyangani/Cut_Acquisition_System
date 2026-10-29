@@ -1,0 +1,16 @@
+{% extends "errors/base.html" %}
+{% load ui %}
+{% block title %}Not allowed{% endblock %}
+{% block doc_title %}Access not allowed{% endblock %}
+{% block code %}403{% endblock %}
+{% block big %}403{% endblock %}
+{% block stamp %}<span class="stamp stamp-lg" data-tone="warn">{% icon 'lock' %}Restricted</span>{% endblock %}
+{% block body %}
+<h1>This page is not open to your account</h1>
+<p class="lede">Your roles do not include this action, or the request is at a stage someone else handles. Nobody can act on a request they raised.</p>
+<div class="btn-row">
+  {% if user.is_authenticated %}<a class="btn btn-primary" href="{% url 'core:dashboard' %}">Go to the dashboard</a>{% else %}<a class="btn btn-primary" href="{% url 'accounts:login' %}">Sign in</a>{% endif %}
+  <a class="btn btn-secondary" href="{% url 'core:process' %}">How approvals work</a>
+</div>
+<p class="small muted mt-24">If you think you should have access, ask a system administrator to check your roles.</p>
+{% endblock %}

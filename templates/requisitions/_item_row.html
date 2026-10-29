@@ -1,0 +1,19 @@
+{% load ui %}<div class="item-row" data-formset-row>
+  <div class="item-row-head">
+    <span class="small"><span class="mono">Item <span data-row-number>{{ number|default:"" }}</span></span></span>
+    {% if form.instance.pk %}
+      <span class="visually-hidden">{{ form.DELETE }}</span>
+      <button class="btn btn-quiet btn-sm" type="button" data-formset-remove>Remove</button>
+    {% elif not first %}
+      <button class="btn btn-quiet btn-sm" type="button" data-formset-remove>Remove</button>
+    {% endif %}
+  </div>
+  {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+  {% if form.non_field_errors %}<ul class="errorlist">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+  <div class="item-grid">
+    {% field form.category %}
+    {% field form.description %}
+    {% field form.quantity %}
+  </div>
+  {% field form.requester_notes %}
+</div>
